@@ -1,0 +1,62 @@
+/* 전문적인 금융 시스템 톤앤매너 유지 */
+body {
+    background-color: #f4f7f9;
+    font-family: 'Pretendard', sans-serif;
+    margin: 0; padding: 20px;
+    color: #333;
+}
+
+.container { max-width: 1200px; margin: 0 auto; }
+
+.asset-header { margin-bottom: 25px; }
+.nav-area { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+.back-btn {
+    padding: 8px 18px; background: white; border: 1px solid #d1d9e0;
+    border-radius: 8px; cursor: pointer; transition: 0.2s;
+}
+.back-btn:hover { background: #f0f4f8; }
+
+/* 총자산 요약 카드 축소 (시뮬레이터 제거) */
+.summary-card {
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    color: white; padding: 25px; border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(26, 115, 232, 0.2);
+}
+.summary-card h2 { margin: 10px 0 0 0; font-size: 2.2rem; }
+
+.tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+
+.data-section {
+    background: white; border-radius: 15px; overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* 헤더에 추가 버튼 배치를 위한 Flexbox 적용 */
+.section-header {
+    background: #1a73e8; color: white; padding: 12px 20px;
+    font-weight: 600; font-size: 1.05rem;
+    display: flex; justify-content: space-between; align-items: center;
+}
+
+/* 자산 삽입(+) 버튼 스타일 */
+.add-btn {
+    background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white; border-radius: 6px; padding: 5px 12px;
+    font-size: 0.85rem; cursor: pointer; transition: 0.2s;
+}
+.add-btn:hover { background: white; color: #1a73e8; }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 14px 20px; border-bottom: 1px solid #f0f0f0; text-align: left; }
+th { background: #fafafa; color: #666; font-size: 0.85rem; font-weight: 600; }
+tr:hover { background: #f8fbff; cursor: context-menu; }
+
+.context-menu {
+    position: absolute; background: white; border: 1px solid #e0e0e0;
+    border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+    display: none; z-index: 1000; min-width: 150px;
+}
+.context-menu ul { list-style: none; margin: 0; padding: 6px 0; }
+.context-menu li { padding: 10px 20px; cursor: pointer; font-size: 0.9rem; }
+.context-menu li:hover { background: #f0f7ff; color: #1a73e8; }
+.context-menu li.danger:hover { background: #fff5f5; color: #e53935; }

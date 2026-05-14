@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>ALM - 통합 자산 관리</title>
+    <link rel="stylesheet" href="/css/Asset.css">
+</head>
+<body>
+<div class="container">
+    <header class="asset-header">
+        <button class="back-btn" onclick="location.href='/main.html'">← 메인</button>
+        <div class="summary-card">
+            <span>총자산 합계</span>
+            <h2 id="total-asset-amount">0 원</h2>
+        </div>
+    </header>
+
+    <main class="tables-grid">
+
+        <section class="data-section">
+            <div class="section-header">
+                <span>금융 계좌</span>
+                <button class="add-btn" onclick="handleInsert('account')">+ 추가</button>
+            </div>
+            <table id="account-table">
+                <thead>
+                <tr><th>은행</th><th>종류</th><th>계좌번호</th><th>잔액</th><th>이율</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section class="data-section">
+            <div class="section-header">
+                <span>부동산</span>
+                <button class="add-btn" onclick="handleInsert('realestate')">+ 추가</button>
+            </div>
+            <table id="realestate-table">
+                <thead>
+                <tr><th>계약 형태</th><th>주소</th><th>자산 금액</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section class="data-section">
+            <div class="section-header">
+                <span>실물 자산</span>
+                <button class="add-btn" onclick="handleInsert('physical')">+ 추가</button>
+            </div>
+            <table id="physical-table">
+                <thead>
+                <tr><th>품목명</th><th>구입가</th><th>현재 평가액</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section class="data-section">
+            <div class="section-header">
+                <span>현금</span>
+                <button class="add-btn" onclick="handleInsert('cash')">+ 추가</button>
+            </div>
+            <table id="cash-table">
+                <thead>
+                <tr><th>보관처</th><th>보유 금액</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+    </main>
+</div>
+
+<div id="asset-context-menu" class="context-menu">
+    <ul>
+        <li onclick="handleAction('update')">수정</li>
+        <li onclick="handleAction('delete')" class="danger">삭제</li>
+    </ul>
+</div>
+
+<script src="/js/asset.js"></script>
+</body>
+</html>

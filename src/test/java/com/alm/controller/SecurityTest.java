@@ -1,19 +1,29 @@
+
 package com.alm.controller;
 
-/**
- * 보안 모듈 통합 테스트 (Integration Test)
- */
+import com.alm.dto.UserSecurityDTO;
+import com.alm.repository.SecurityRepository;
+import java.time.LocalDateTime;
+
 public class SecurityTest {
     public static void main(String[] args) {
-        SecurityController controller = new SecurityController();
+        SecurityRepository repo = new SecurityRepository();
 
-        System.out.println("=== [테스트 1] 초기 비밀번호 설정 시작 ===");
-        // 기획서 5.1-1-setupPassword() 테스트
-        controller.setupPassword("donghyuk2026");
+        // 1. 가짜 DTO 생성
+        UserSecurityDTO testDto = new UserSecurityDTO("test_hash_1234", false, LocalDateTime.now());
 
-        System.out.println("\n=== [테스트 2] 로그인 인증 시도 ===");
-        // 기획서 5.1-1-login() 테스트
-        controller.login("donghyuk2026"); // 성공 케이스
-        controller.login("wrongpassword"); // 실패 케이스
+        // 2. 저장 시도
+        System.out.println("=== DB 저장 테스트 시작 ===");
+        boolean result = repo.saveInitialPassword(testDto);
+
+        if (result) {
+            System.out.println("✅ 성공: DB에 데이터가 정상적으로 박혔습니다.");
+        } else {
+            System.out.println("❌ 실패: SQL 에러나 DB 연결 문제를 확인하세요.");
+        }
+
+        // 3. 조회 테스트
+        String hash = repo.getPasswordHash();
+        System.out.println("조회된 해시값: " + hash);
     }
 }

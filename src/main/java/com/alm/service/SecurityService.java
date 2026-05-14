@@ -9,30 +9,27 @@ import java.time.LocalDateTime;
 public class SecurityService {
 
     private final SecurityRepository repository = new SecurityRepository();
+    // SecurityUtil의 메서드를 사용하기 위해 인스턴스 생성
+    private final SecurityUtil util = new SecurityUtil();
 
     /**
-     * 최초 접속 상태를 확인
+     * 최초 접속 여부 확인
+     * 판단 기준: DB에 패스워드 해시 데이터 존재 여부
      */
     public boolean checkFirstLogin() {
-        // DB에서 해시값
-        String hash = repository.getPasswordHash();
-        // 해시가 없으면(null) 한 번도 비번을 설정한 적 없는 '최초 접속'
-        return hash == null;
+        return repository.getPasswordHash() == null;
     }
 
     /**
-     * [로직 2] 사용자 인증 처리
+     * 사용자 인증 (로그인)
      */
     public boolean authenticate(String inputPassword) {
-        // 1. 입력받은 평문을 (SecurityUtil)에 넣음
-        String inputHash = SecurityUtil.encryptSHA256(inputPassword);
-
-        // 2. (Repository)에 저장된 해시를 꺼내옴 [cite: 267]
+        // 어제 구현한 SHA-256 암호화 로직 사용
+        String inputHash = util.encryptSHA256(inputPassword);
         String dbHash = repository.getPasswordHash();
 
-        // 3. (해시)가 똑같은지 비교함
         if (inputHash != null && inputHash.equals(dbHash)) {
-            // 일치하면 접속일 갱신
+            // 로그인 성공 시 최종 접속 시각 업데이트 (기존 Repository 인터페이스 준수)
             repository.updateLastLogin(Timestamp.valueOf(LocalDateTime.now()));
             return true;
         }
@@ -40,17 +37,16 @@ public class SecurityService {
     }
 
     /**
-     *  초기 비밀번호 설정
+     * 초기 비밀번호 설정 및 저장
      */
     public boolean setupInitialPassword(String password) {
-        //  평문을 암호화
-        String hash = SecurityUtil.encryptSHA256(password);
+        String hash = util.encryptSHA256(password);
 
-        //  (DTO)'에 데이터를 담음
-        // 비밀번호 해시, 최초로그인아님(false), 현재시간
+        // 동혁 님이 주신 DTO 생성자 형식: (hash, isFirstLogin, now)
+        // 설정이 완료되는 시점이므로 isFirstLogin은 false로 전달
         UserSecurityDTO dto = new UserSecurityDTO(hash, false, LocalDateTime.now());
 
-        // 저장
+        // 기존 Repository의 saveInitialPassword(dto) 호출
         return repository.saveInitialPassword(dto);
     }
 }

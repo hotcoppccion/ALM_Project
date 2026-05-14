@@ -1,0 +1,61 @@
+/* 기본 스타일 및 배경 */
+body {
+    background-color: #f4f7f9;
+    font-family: 'Pretendard', sans-serif;
+    margin: 0; padding: 20px;
+}
+
+/* 상단 총자산 카드 */
+.total-asset-card {
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    color: white;
+    padding: 30px;
+    border-radius: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+/* 4대 영역 그리드 */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+/* 공통 카드 스타일 */
+.card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    height: 200px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    border: 1px solid #e0e0e0;
+}
+
+.card-header {
+    background: #1a73e8;
+    color: white;
+    padding: 12px;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* 활성/비활성 스타일 */
+.card.active:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.card.pending { background: #f0f0f0; cursor: not-allowed; opacity: 0.7; }
+.card.pending .card-header { background: #78909c; }
+
+/* 컨텍스트 메뉴 스타일 */
+.context-menu {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    display: none; /* 기본 숨김 */
+    z-index: 1000;
+}
+.context-menu ul { list-style: none; padding: 5px 0; margin: 0; }
+.context-menu li { padding: 10px 20px; cursor: pointer; }
+.context-menu li:hover { background: #f0f0f0; }
