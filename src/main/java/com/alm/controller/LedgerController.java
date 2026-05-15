@@ -154,7 +154,8 @@ public class LedgerController {
      */
     @GetMapping("/fixed-rules")
     public ResponseEntity<?> getFixedRules() {
-        return ResponseEntity.ok(scheduledService.getFixedRules());
+        try { return ResponseEntity.ok(scheduledService.getFixedRules()); }
+        catch (Exception e) { return ResponseEntity.ok(java.util.List.of()); }
     }
 
     /**
@@ -211,7 +212,8 @@ public class LedgerController {
      */
     @GetMapping("/fixed-receipts")
     public ResponseEntity<?> getFixedReceipts() {
-        return ResponseEntity.ok(scheduledService.getFixedReceipts());
+        try { return ResponseEntity.ok(scheduledService.getFixedReceipts()); }
+        catch (Exception e) { return ResponseEntity.ok(java.util.List.of()); }
     }
 
     /**
@@ -238,7 +240,8 @@ public class LedgerController {
      */
     @GetMapping("/income-rules")
     public ResponseEntity<?> getIncomeRules() {
-        return ResponseEntity.ok(scheduledService.getIncomeRules());
+        try { return ResponseEntity.ok(scheduledService.getIncomeRules()); }
+        catch (Exception e) { return ResponseEntity.ok(java.util.List.of()); }
     }
 
     /**
@@ -295,7 +298,8 @@ public class LedgerController {
      */
     @GetMapping("/income-receipts")
     public ResponseEntity<?> getIncomeReceipts() {
-        return ResponseEntity.ok(scheduledService.getIncomeReceipts());
+        try { return ResponseEntity.ok(scheduledService.getIncomeReceipts()); }
+        catch (Exception e) { return ResponseEntity.ok(java.util.List.of()); }
     }
 
     /**
@@ -322,7 +326,8 @@ public class LedgerController {
      */
     @GetMapping("/variable-rules")
     public ResponseEntity<?> getVariableRules() {
-        return ResponseEntity.ok(scheduledService.getVariableRules());
+        try { return ResponseEntity.ok(scheduledService.getVariableRules()); }
+        catch (Exception e) { return ResponseEntity.ok(java.util.List.of()); }
     }
 
     /**
@@ -379,7 +384,8 @@ public class LedgerController {
      */
     @GetMapping("/variable-receipts")
     public ResponseEntity<?> getVariableReceipts() {
-        return ResponseEntity.ok(scheduledService.getVariableReceipts());
+        try { return ResponseEntity.ok(scheduledService.getVariableReceipts()); }
+        catch (Exception e) { return ResponseEntity.ok(java.util.List.of()); }
     }
 
     /**

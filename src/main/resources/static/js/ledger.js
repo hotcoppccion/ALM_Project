@@ -63,14 +63,25 @@ function toDateStr(year, month, day) {
 //  초기 로드 (DOMContentLoaded)
 // ══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadAllEntries();   // 전체 내역 캐시 로드
-    loadSummaryFromAPI();     // 상단 요약 카드
-    loadCategories();         // 모달 카테고리 드롭다운
-    await loadLiquidAssets(); // 모달 연동 자산 드롭다운 (캐시 저장)
-    renderCalendar();         // 달력 그리기
-    renderDetailList();       // 이달 전체 내역 (초기 상태)
+
+    // ① API 대기 없이 즉시 UI 렌더링
+    //    (API가 느리거나 실패해도 달력/목록이 먼저 표시됨)
+    renderCalendar();
+    renderDetailList();
     document.getElementById('inp-date').valueAsDate = new Date();
-    // 스케줄 탭 초기 로드
+
+    // ② 일반 내역 캐시 로드 후 달력·목록 재렌더링 (allEntries 반영)
+    await loadAllEntries();
+    renderCalendar();
+    renderDetailList();
+
+    // ③ 나머지 데이터 로드 (UI 렌더링과 독립적)
+    loadSummaryFromAPI();
+    loadCategories();
+    fillScheduleCategorySelects();  // 스케줄 탭 카테고리 드롭다운
+    await loadLiquidAssets();       // 자산 드롭다운 캐시 (모달에서 재사용)
+
+    // ④ 스케줄 탭 초기 로드
     loadFixedRules();
     loadFixedReceipts();
     loadIncomeRules();
@@ -501,10 +512,7 @@ async function fillScheduleCategorySelects() {
     }
 }
 
-// DOMContentLoaded 이후 추가 초기화
-document.addEventListener('DOMContentLoaded', () => {
-    fillScheduleCategorySelects();
-});
+// fillScheduleCategorySelects()는 DOMContentLoaded 핸들러(상단)에 통합됨
 
 // ══════════════════════════════════════════════════════════
 //  고정지출 규칙
