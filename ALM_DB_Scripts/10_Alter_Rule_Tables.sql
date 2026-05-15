@@ -1,49 +1,48 @@
 -- ═══════════════════════════════════════════════════════════
---  10_Alter_Rule_Tables.sql
---  규칙 테이블(fixed_expense_rule / regular_income_rule / variable_expense_rule)에
---  name(규칙명)과 category_id(카테고리 FK) 컬럼을 추가하는 DDL 스크립트.
+--  10_Alter_Rule_Tables.sql  (MySQL 8.0 호환)
 --
---  실행 전제: 03_Ledger_Domain.sql이 먼저 실행되어 해당 테이블이 존재해야 함.
---  실행 순서: 이 파일은 03 이후 최초 1회만 실행.
+--  규칙 테이블 3종에 name(규칙명), category_id(FK) 컬럼 추가.
 --
---  ※ IF NOT EXISTS 사용: 재실행 시 "Column already exists" 오류 방지 (MySQL 8.0+)
---  ※ name 백틱(`) 처리: MySQL 예약어 충돌 방지
---  ※ FK 제약조건은 컬럼 추가와 분리: 멱등성(idempotent) 보장
+--  ※ IF NOT EXISTS 는 MariaDB 전용 문법 → MySQL 8.0에서 1064 오류 발생
+--     → 해당 구문 제거, 순수 MySQL 호환 문장으로 작성
+--  ※ 실행 전: 좌측 스키마에서 alm_db 더블클릭 → 활성화(볼드체) 확인 후 실행
+--  ※ 만약 일부 컬럼이 이미 존재해서 오류가 나면 그 줄만 건너뛰고 나머지 실행
 -- ═══════════════════════════════════════════════════════════
 
--- ──────────────────────────────────────────────────────────
---  1. fixed_expense_rule 컬럼 추가
--- ──────────────────────────────────────────────────────────
-ALTER TABLE fixed_expense_rule
-  ADD COLUMN IF NOT EXISTS `name` VARCHAR(100) NOT NULL DEFAULT '미지정' AFTER rule_id,
-  ADD COLUMN IF NOT EXISTS category_id INT NULL AFTER `name`;
+USE alm_db;
 
--- FK: 이미 존재하면 DROP 후 재생성 (중복 오류 방지)
+-- ──────────────────────────────────────────────────────────
+--  1. fixed_expense_rule
+-- ──────────────────────────────────────────────────────────
 ALTER TABLE fixed_expense_rule
-  DROP FOREIGN KEY IF EXISTS fk_fer_cat;
+  ADD COLUMN `name` VARCHAR(100) NOT NULL DEFAULT '미지정' AFTER rule_id;
+
+ALTER TABLE fixed_expense_rule
+  ADD COLUMN category_id INT NULL AFTER `name`;
+
 ALTER TABLE fixed_expense_rule
   ADD CONSTRAINT fk_fer_cat FOREIGN KEY (category_id) REFERENCES ledger_category(category_id);
 
 -- ──────────────────────────────────────────────────────────
---  2. regular_income_rule 컬럼 추가
+--  2. regular_income_rule
 -- ──────────────────────────────────────────────────────────
 ALTER TABLE regular_income_rule
-  ADD COLUMN IF NOT EXISTS `name` VARCHAR(100) NOT NULL DEFAULT '미지정' AFTER rule_id,
-  ADD COLUMN IF NOT EXISTS category_id INT NULL AFTER `name`;
+  ADD COLUMN `name` VARCHAR(100) NOT NULL DEFAULT '미지정' AFTER rule_id;
 
 ALTER TABLE regular_income_rule
-  DROP FOREIGN KEY IF EXISTS fk_rir_cat;
+  ADD COLUMN category_id INT NULL AFTER `name`;
+
 ALTER TABLE regular_income_rule
   ADD CONSTRAINT fk_rir_cat FOREIGN KEY (category_id) REFERENCES ledger_category(category_id);
 
 -- ──────────────────────────────────────────────────────────
---  3. variable_expense_rule 컬럼 추가
+--  3. variable_expense_rule
 -- ──────────────────────────────────────────────────────────
 ALTER TABLE variable_expense_rule
-  ADD COLUMN IF NOT EXISTS `name` VARCHAR(100) NOT NULL DEFAULT '미지정' AFTER rule_id,
-  ADD COLUMN IF NOT EXISTS category_id INT NULL AFTER `name`;
+  ADD COLUMN `name` VARCHAR(100) NOT NULL DEFAULT '미지정' AFTER rule_id;
 
 ALTER TABLE variable_expense_rule
-  DROP FOREIGN KEY IF EXISTS fk_ver_cat;
+  ADD COLUMN category_id INT NULL AFTER `name`;
+
 ALTER TABLE variable_expense_rule
   ADD CONSTRAINT fk_ver_cat FOREIGN KEY (category_id) REFERENCES ledger_category(category_id);
