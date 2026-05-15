@@ -307,3 +307,103 @@ tbody td { padding: 12px 14px; font-size: 13px; }
     font-size: 14px; font-weight: 600; transition: background 0.2s;
 }
 .btn-submit:hover { background: #2563eb; }
+
+/* ────────────────────────────────────────────────
+   스케줄 탭 (고정지출 / 정기수입 / 변동지출) 공통 레이아웃
+──────────────────────────────────────────────── */
+.scheduled-layout {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 규칙 섹션 */
+.rule-section {
+    padding: 20px 28px 0;
+    border-bottom: 2px solid #1e293b;
+}
+
+/* 영수증/이력 섹션 */
+.receipt-section {
+    padding: 20px 28px;
+}
+
+/* 섹션 헤더: 제목 + 등록 버튼 가로 배치 */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+.section-header h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #e2e8f0;
+}
+
+/* ── 변동지출 상태 배지 ── */
+.badge-pending {
+    background: #451a03;
+    color: #fb923c;
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+}
+.badge-confirmed {
+    background: #14532d;
+    color: #4ade80;
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+/* ── 실행 버튼 (고정지출/정기수입 규칙 실행 트리거) ── */
+.exec-btn {
+    background: #7c3aed;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    transition: background 0.2s;
+    margin-right: 4px;
+}
+.exec-btn:hover { background: #6d28d9; }
+
+/* 정기수입 실행 버튼: 초록 계열 */
+.income-exec-btn { background: #059669; }
+.income-exec-btn:hover { background: #047857; }
+
+/* ── 확정 버튼 (변동지출 PENDING → CONFIRMED) ── */
+.confirm-btn {
+    background: #059669;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    transition: background 0.2s;
+    margin-right: 4px;
+}
+.confirm-btn:hover { background: #047857; }
+
+/* ── 삭제 버튼 (스케줄 탭 전용) ── */
+.del-btn {
+    background: #1e293b;
+    color: #f87171;
+    border: 1px solid #450a0a;
+    padding: 5px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.2s;
+}
+.del-btn:hover { background: #450a0a; }
