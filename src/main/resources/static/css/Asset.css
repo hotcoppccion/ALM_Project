@@ -59,4 +59,25 @@ tr:hover { background: #f8fbff; cursor: context-menu; }
 .context-menu ul { list-style: none; margin: 0; padding: 6px 0; }
 .context-menu li { padding: 10px 20px; cursor: pointer; font-size: 0.9rem; }
 .context-menu li:hover { background: #f0f7ff; color: #1a73e8; }
-.context-menu li.danger:hover { background: #fff5f5; color: #e53935; }
+.context-menu li.danger { color: #e53935; }
+.context-menu li.danger:hover { background: #fff5f5; color: #c62828; }
+
+/* 모달 입력 공통 스타일 */
+#modal-inputs label {
+    display: block;
+    font-size: 0.82rem;
+    color: #555;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+/* 빈 행 안내 문구 */
+tbody tr.empty-row td {
+    text-align: center;
+    color: #bbb;
+    font-size: 0.88rem;
+    padding: 24px;
+}
+
+/* 행 선택 강조 */
+tr[data-id]:hover { background: #f0f7ff !important; cursor: context-menu; }

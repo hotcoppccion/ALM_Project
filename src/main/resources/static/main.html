@@ -3,51 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <title>ALM - 통합 자산 관리 시스템</title>
-    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="/css/main.css">
 </head>
 <body>
 <div class="container">
+
+    <!-- 상단 헤더 -->
     <header class="dashboard-header">
-        <h1>김동혁 님의 ALM 관제 센터</h1>
+        <div class="header-title">
+            <h1>ALM 관제 센터</h1>
+            <span class="subtitle">Personal Asset &amp; Ledger Management</span>
+        </div>
         <div class="total-asset-card">
             <span class="label">총자산 합계</span>
-            <h2 id="total-amount">15,050,000 원</h2>
+            <h2 id="total-amount">계산 중...</h2>
         </div>
     </header>
 
+    <!-- 도메인 카드 그리드 -->
     <main class="grid-container">
-        <section class="card active" id="asset-card" onclick="location.href='asset.html'">
-            <div class="card-header">통합 자산 관리</div>
-            <div class="card-content">
-                <p>현재 운용 자산 리스트 및<br>상세 내역 확인</p>
+
+        <!-- 자산 관리 카드 (활성 + 대표 계좌 포함) -->
+        <div class="card active wide-card" onclick="location.href='/Asset.html'">
+            <div class="card-header">
+                💰 자산 관리
+                <span class="card-badge active-badge">사용 가능</span>
             </div>
-        </section>
+            <div class="card-body">
+                <!-- 대표 계좌 Top 2 테이블 -->
+                <div class="rep-label">⭐ 대표 계좌 (잔액 상위 2개)</div>
+                <table id="representative-table">
+                    <thead>
+                        <tr>
+                            <th>은행</th>
+                            <th>종류</th>
+                            <th>계좌번호</th>
+                            <th>잔액</th>
+                            <th>이율</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rep-asset-body">
+                        <tr>
+                            <td colspan="5" class="loading-cell">데이터를 불러오는 중...</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="card-footer-hint">클릭하여 전체 자산 관리 →</div>
+            </div>
+        </div>
 
-        <section class="card pending">
-            <div class="card-header">가계부 및 현금흐름</div>
-            <div class="card-content">아직 미구현 영역입니다.</div>
-        </section>
+        <!-- 가계부 (활성) -->
+        <div class="card active" onclick="location.href='/Ledger.html'">
+            <div class="card-header">
+                📒 가계부
+                <span class="card-badge active-badge">사용 가능</span>
+            </div>
+            <div class="card-body">
+                <div class="rep-label">📊 이달의 현황</div>
+                <div id="ledger-summary" style="padding:8px 0; font-size:13px; color:#a0aec0;">
+                    불러오는 중...
+                </div>
+                <div class="card-footer-hint">클릭하여 가계부 관리 →</div>
+            </div>
+        </div>
 
-        <section class="card pending">
-            <div class="card-header">지능형 목표 관리</div>
-            <div class="card-content">아직 미구현 영역입니다.</div>
-        </section>
+        <!-- 재무 목표 (개발 예정) -->
+        <div class="card pending">
+            <div class="card-header">
+                🎯 재무 목표
+                <span class="card-badge pending-badge">개발 예정</span>
+            </div>
+            <div class="card-body pending-body">
+                <p>목표 금액과 달성률을 시각적으로 관리합니다.</p>
+            </div>
+        </div>
 
-        <section class="card pending">
-            <div class="card-header">투자 포트폴리오</div>
-            <div class="card-content">아직 미구현 영역입니다.</div>
-        </section>
+        <!-- 투자 포트폴리오 (개발 예정) -->
+        <div class="card pending">
+            <div class="card-header">
+                📈 투자 포트폴리오
+                <span class="card-badge pending-badge">개발 예정</span>
+            </div>
+            <div class="card-body pending-body">
+                <p>보유 종목 현황과 매매 이력을 관리합니다.</p>
+            </div>
+        </div>
+
     </main>
+
 </div>
 
-<div id="context-menu" class="context-menu">
-    <ul>
-        <li onclick="handleAction('insert')">데이터 삽입</li>
-        <li onclick="handleAction('update')">데이터 수정</li>
-        <li onclick="handleAction('delete')">데이터 삭제</li>
-    </ul>
-</div>
-
-<script src="main.js"></script>
+<script src="/js/main.js"></script>
+<script>
+    // 가계부 이달 요약을 대시보드 카드에 표시
+    fetch('/api/ledger/summary').then(r => r.json()).then(data => {
+        const fmt = n => new Intl.NumberFormat('ko-KR').format(n) + '원';
+        const net = data.net || 0;
+        document.getElementById('ledger-summary').innerHTML =
+            `<span style="color:#48bb78">▲ 수입 ${fmt(data.totalIncome||0)}</span>
+             &nbsp;&nbsp;
+             <span style="color:#fc8181">▼ 지출 ${fmt(data.totalExpense||0)}</span>
+             &nbsp;&nbsp;
+             <span style="color:#63b3ed">순수지 ${net>=0?'+':''}${fmt(net)}</span>`;
+    }).catch(() => {
+        document.getElementById('ledger-summary').textContent = '데이터 없음';
+    });
+</script>
 </body>
 </html>

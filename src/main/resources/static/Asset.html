@@ -16,16 +16,13 @@
     </header>
 
     <main class="tables-grid">
-
         <section class="data-section">
             <div class="section-header">
                 <span>금융 계좌</span>
-                <button class="add-btn" onclick="handleInsert('account')">+ 추가</button>
+                <button class="add-btn" onclick="handleInsert('ACC')">+ 추가</button>
             </div>
             <table id="account-table">
-                <thead>
-                <tr><th>은행</th><th>종류</th><th>계좌번호</th><th>잔액</th><th>이율</th></tr>
-                </thead>
+                <thead><tr><th>은행</th><th>종류</th><th>계좌번호</th><th>잔액</th><th>이율</th></tr></thead>
                 <tbody></tbody>
             </table>
         </section>
@@ -33,12 +30,10 @@
         <section class="data-section">
             <div class="section-header">
                 <span>부동산</span>
-                <button class="add-btn" onclick="handleInsert('realestate')">+ 추가</button>
+                <button class="add-btn" onclick="handleInsert('REA')">+ 추가</button>
             </div>
             <table id="realestate-table">
-                <thead>
-                <tr><th>계약 형태</th><th>주소</th><th>자산 금액</th></tr>
-                </thead>
+                <thead><tr><th>계약 형태</th><th>주소</th><th>자산 금액</th></tr></thead>
                 <tbody></tbody>
             </table>
         </section>
@@ -46,12 +41,10 @@
         <section class="data-section">
             <div class="section-header">
                 <span>실물 자산</span>
-                <button class="add-btn" onclick="handleInsert('physical')">+ 추가</button>
+                <button class="add-btn" onclick="handleInsert('PHY')">+ 추가</button>
             </div>
             <table id="physical-table">
-                <thead>
-                <tr><th>품목명</th><th>구입가</th><th>현재 평가액</th></tr>
-                </thead>
+                <thead><tr><th>품목명</th><th>구입가</th><th>현재 평가액</th></tr></thead>
                 <tbody></tbody>
             </table>
         </section>
@@ -59,23 +52,45 @@
         <section class="data-section">
             <div class="section-header">
                 <span>현금</span>
-                <button class="add-btn" onclick="handleInsert('cash')">+ 추가</button>
+                <button class="add-btn" onclick="handleInsert('CSH')">+ 추가</button>
             </div>
             <table id="cash-table">
-                <thead>
-                <tr><th>보관처</th><th>보유 금액</th></tr>
-                </thead>
+                <thead><tr><th>보관처</th><th>보유 금액</th></tr></thead>
                 <tbody></tbody>
             </table>
         </section>
-
     </main>
 </div>
 
+<!-- 오버레이 배경 -->
+<div id="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9998;"
+     onclick="closeModal()"></div>
+
+<!-- 자산 추가/수정 모달 -->
+<div id="asset-modal" style="display:none; position:fixed; top:50%; left:50%;
+     transform:translate(-50%,-50%); background:white; padding:28px 30px;
+     border-radius:14px; box-shadow:0 16px 40px rgba(0,0,0,0.25);
+     z-index:9999; width:360px; max-height:85vh; overflow-y:auto;">
+    <h3 id="modal-title" style="margin:0 0 18px 0; color:#1a73e8; font-size:1.1rem;">자산 추가</h3>
+    <form onsubmit="submitAssetForm(event)">
+        <input type="hidden" id="modal-type-code">
+        <div id="modal-inputs" style="margin-bottom:20px;"></div>
+        <div style="text-align:right; border-top:1px solid #f0f0f0; padding-top:14px;">
+            <button type="button" onclick="closeModal()"
+                    style="padding:8px 18px; margin-right:8px; cursor:pointer;
+                           border:1px solid #ddd; border-radius:7px; background:white;">취소</button>
+            <button type="submit"
+                    style="padding:8px 22px; background:#1a73e8; color:white;
+                           border:none; border-radius:7px; cursor:pointer; font-weight:600;">저장</button>
+        </div>
+    </form>
+</div>
+
+<!-- 우클릭 컨텍스트 메뉴 -->
 <div id="asset-context-menu" class="context-menu">
     <ul>
-        <li onclick="handleAction('update')">수정</li>
-        <li onclick="handleAction('delete')" class="danger">삭제</li>
+        <li onclick="handleAction('update')">✏️ 수정</li>
+        <li class="danger" onclick="handleAction('delete')">🗑️ 삭제</li>
     </ul>
 </div>
 

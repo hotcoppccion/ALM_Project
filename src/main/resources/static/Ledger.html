@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>ALM - 가계부</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; min-height: 100vh; }
+
+        /* ── 헤더 ── */
+        .page-header {
+            background: linear-gradient(135deg, #16213e, #0f3460);
+            padding: 20px 32px;
+            display: flex; align-items: center; gap: 20px;
+            border-bottom: 1px solid #2a2a4a;
+        }
+        .back-btn {
+            background: #2a2a4a; color: #a0aec0; border: none;
+            padding: 8px 16px; border-radius: 8px; cursor: pointer;
+            font-size: 14px; text-decoration: none;
+            transition: background 0.2s;
+        }
+        .back-btn:hover { background: #3a3a5a; }
+        .page-header h1 { font-size: 22px; color: #e2e8f0; }
+        .page-header .subtitle { font-size: 13px; color: #718096; margin-top: 2px; }
+
+        /* ── 월별 요약 카드 ── */
+        .summary-bar {
+            display: flex; gap: 16px; padding: 24px 32px;
+            background: #16213e;
+        }
+        .summary-card {
+            flex: 1; background: #1e293b; border-radius: 12px;
+            padding: 18px 22px; border: 1px solid #2d3748;
+        }
+        .summary-card .label { font-size: 12px; color: #718096; margin-bottom: 8px; letter-spacing: 0.5px; }
+        .summary-card .amount { font-size: 24px; font-weight: 700; }
+        .income-card .amount  { color: #48bb78; }
+        .expense-card .amount { color: #fc8181; }
+        .net-card .amount     { color: #63b3ed; }
+
+        /* ── 툴바 ── */
+        .toolbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 32px; background: #1a1a2e;
+            border-bottom: 1px solid #2a2a4a;
+        }
+        .toolbar-title { font-size: 15px; color: #a0aec0; }
+        .add-btn {
+            background: #4299e1; color: white; border: none;
+            padding: 10px 22px; border-radius: 8px; cursor: pointer;
+            font-size: 14px; font-weight: 600;
+            transition: background 0.2s;
+        }
+        .add-btn:hover { background: #3182ce; }
+
+        /* ── 테이블 ── */
+        .table-wrap { padding: 0 32px 32px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        thead tr { background: #1e293b; border-bottom: 2px solid #2d3748; }
+        thead th {
+            padding: 12px 16px; text-align: left;
+            font-size: 12px; color: #718096; letter-spacing: 0.5px; font-weight: 600;
+        }
+        tbody tr {
+            border-bottom: 1px solid #2a2a4a;
+            transition: background 0.15s; cursor: default;
+        }
+        tbody tr:hover { background: #1e293b; }
+        tbody td { padding: 13px 16px; font-size: 14px; }
+        .amount-income  { color: #48bb78; font-weight: 600; }
+        .amount-expense { color: #fc8181; font-weight: 600; }
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 20px;
+            font-size: 11px; font-weight: 600;
+        }
+        .badge-income  { background: #1a3a2a; color: #48bb78; }
+        .badge-expense { background: #3a1a1a; color: #fc8181; }
+        .empty-row td { text-align: center; padding: 60px; color: #4a5568; font-size: 15px; }
+
+        /* ── 우클릭 컨텍스트 메뉴 ── */
+        #context-menu {
+            display: none; position: fixed; z-index: 1000;
+            background: #2d3748; border: 1px solid #4a5568;
+            border-radius: 8px; overflow: hidden; min-width: 160px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        .ctx-item {
+            padding: 11px 16px; cursor: pointer; font-size: 14px;
+            display: flex; align-items: center; gap: 10px;
+            transition: background 0.15s;
+        }
+        .ctx-item:hover { background: #3a4a5a; }
+        .ctx-item.danger { color: #fc8181; }
+        .ctx-item.danger:hover { background: #4a1a1a; }
+
+        /* ── 모달 ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.6); z-index: 500;
+            justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #1e293b; border-radius: 16px;
+            width: 480px; max-width: 95vw;
+            border: 1px solid #2d3748;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid #2d3748;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-header h3 { font-size: 16px; color: #e2e8f0; }
+        .modal-close {
+            background: none; border: none; color: #718096;
+            font-size: 20px; cursor: pointer; line-height: 1;
+        }
+        .modal-close:hover { color: #e2e8f0; }
+        .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+        .form-group label { display: block; font-size: 12px; color: #a0aec0; margin-bottom: 6px; }
+        .form-group input, .form-group select {
+            width: 100%; background: #2d3748; border: 1px solid #4a5568;
+            color: #e2e8f0; padding: 10px 14px; border-radius: 8px; font-size: 14px;
+            outline: none; transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: #4299e1; }
+        .form-row { display: flex; gap: 12px; }
+        .form-row .form-group { flex: 1; }
+        .direction-toggle { display: flex; gap: 8px; }
+        .dir-btn {
+            flex: 1; padding: 10px; border: 1px solid #4a5568;
+            border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
+            background: #2d3748; color: #a0aec0; transition: all 0.2s;
+        }
+        .dir-btn.active-in  { background: #1a3a2a; border-color: #48bb78; color: #48bb78; }
+        .dir-btn.active-out { background: #3a1a1a; border-color: #fc8181; color: #fc8181; }
+        .modal-footer {
+            padding: 16px 24px 20px;
+            border-top: 1px solid #2d3748;
+            display: flex; justify-content: flex-end; gap: 10px;
+        }
+        .btn-cancel {
+            background: #2d3748; color: #a0aec0; border: none;
+            padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px;
+        }
+        .btn-submit {
+            background: #4299e1; color: white; border: none;
+            padding: 10px 24px; border-radius: 8px; cursor: pointer;
+            font-size: 14px; font-weight: 600;
+        }
+        .btn-submit:hover { background: #3182ce; }
+        .btn-cancel:hover { background: #3a4a5a; }
+    </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<div class="page-header">
+    <a href="/main.html" class="back-btn">← 대시보드</a>
+    <div>
+        <h1>📒 가계부</h1>
+        <div class="subtitle">일반 지출 · 수입 내역 관리</div>
+    </div>
+</div>
+
+<!-- 월별 요약 -->
+<div class="summary-bar">
+    <div class="summary-card income-card">
+        <div class="label">이달의 수입</div>
+        <div class="amount" id="total-income">-</div>
+    </div>
+    <div class="summary-card expense-card">
+        <div class="label">이달의 지출</div>
+        <div class="amount" id="total-expense">-</div>
+    </div>
+    <div class="summary-card net-card">
+        <div class="label">이달의 순수지</div>
+        <div class="amount" id="net-amount">-</div>
+    </div>
+</div>
+
+<!-- 툴바 -->
+<div class="toolbar">
+    <span class="toolbar-title">전체 내역 (우클릭 → 삭제)</span>
+    <button class="add-btn" onclick="openAddModal()">+ 내역 추가</button>
+</div>
+
+<!-- 테이블 -->
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>날짜</th>
+                <th>구분</th>
+                <th>카테고리</th>
+                <th>연동 자산</th>
+                <th style="text-align:right">금액</th>
+            </tr>
+        </thead>
+        <tbody id="ledger-body">
+            <tr class="empty-row"><td colspan="5">데이터를 불러오는 중...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- 우클릭 컨텍스트 메뉴 -->
+<div id="context-menu">
+    <div class="ctx-item danger" onclick="deleteSelected()">🗑️ 이 내역 삭제</div>
+</div>
+
+<!-- 내역 추가 모달 -->
+<div class="modal-overlay" id="add-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>새 가계부 내역 추가</h3>
+            <button class="modal-close" onclick="closeAddModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <!-- 수입 / 지출 선택 -->
+            <div class="form-group">
+                <label>구분</label>
+                <div class="direction-toggle">
+                    <button class="dir-btn active-in" id="btn-in"  onclick="setDirection('IN')">＋ 수입</button>
+                    <button class="dir-btn"           id="btn-out" onclick="setDirection('OUT')">－ 지출</button>
+                </div>
+            </div>
+            <input type="hidden" id="direction-val" value="IN">
+
+            <div class="form-row">
+                <!-- 카테고리 -->
+                <div class="form-group">
+                    <label>카테고리</label>
+                    <select id="sel-category"></select>
+                </div>
+                <!-- 연동 자산 -->
+                <div class="form-group">
+                    <label>연동 자산 <span style="color:#718096">(선택)</span></label>
+                    <select id="sel-asset">
+                        <option value="0">-- 없음 --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <!-- 금액 -->
+                <div class="form-group">
+                    <label>금액 (원)</label>
+                    <input type="number" id="inp-amount" placeholder="예: 50000" min="0">
+                </div>
+                <!-- 거래일 -->
+                <div class="form-group">
+                    <label>거래일</label>
+                    <input type="date" id="inp-date">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeAddModal()">취소</button>
+            <button class="btn-submit" onclick="submitLedger()">등록</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── 전역 상태 변수 ───────────────────────────────────────────────
+    let selectedLedgerId = null; // 우클릭으로 선택된 내역의 ledger_id
+
+    // ── 숫자 포맷팅 유틸 ────────────────────────────────────────────
+    // Intl.NumberFormat: 브라우저 내장 국제화 API. 숫자를 locale에 맞는 통화 형식으로 포맷.
+    const fmt = (n) => new Intl.NumberFormat('ko-KR').format(n) + '원';
+
+    // ── 초기 데이터 로드 ─────────────────────────────────────────────
+    // DOMContentLoaded: HTML 파싱이 완료된 후 실행되는 이벤트. DOM 요소 조작 가능 시점.
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSummary();
+        loadLedgerList();
+        loadCategories();
+        loadLiquidAssets();
+        // 오늘 날짜를 거래일 기본값으로 설정
+        document.getElementById('inp-date').valueAsDate = new Date();
+    });
+
+    // ── 월별 요약 로드 ───────────────────────────────────────────────
+    async function loadSummary() {
+        // fetch(): 브라우저 내장 HTTP 클라이언트. Promise를 반환.
+        // async/await: 비동기 함수를 동기처럼 작성하는 ES2017 문법.
+        const res  = await fetch('/api/ledger/summary');
+        const data = await res.json();
+        document.getElementById('total-income').textContent  = fmt(data.totalIncome  || 0);
+        document.getElementById('total-expense').textContent = fmt(data.totalExpense || 0);
+        const net = data.net || 0;
+        const el  = document.getElementById('net-amount');
+        el.textContent = (net >= 0 ? '+' : '') + fmt(net);
+        el.style.color = net >= 0 ? '#48bb78' : '#fc8181';
+    }
+
+    // ── 내역 목록 로드 ───────────────────────────────────────────────
+    async function loadLedgerList() {
+        const res  = await fetch('/api/ledger/list');
+        const list = await res.json();
+        const tbody = document.getElementById('ledger-body');
+
+        if (!list || list.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">등록된 내역이 없습니다.</td></tr>';
+            return;
+        }
+
+        // Array.map().join(''): 배열 각 요소를 HTML 문자열로 변환 후 합쳐 innerHTML에 삽입
+        tbody.innerHTML = list.map(item => {
+            const isIncome = item.amount > 0;
+            const absAmt   = Math.abs(item.amount);
+            const badge    = isIncome
+                ? '<span class="badge badge-income">수입</span>'
+                : '<span class="badge badge-expense">지출</span>';
+            const amtClass = isIncome ? 'amount-income' : 'amount-expense';
+            const amtText  = (isIncome ? '+' : '-') + fmt(absAmt);
+
+            // data-id 속성: 우클릭 시 ledger_id를 추출하기 위한 HTML5 커스텀 데이터 속성
+            return `
+                <tr data-id="${item.ledger_id}" oncontextmenu="showCtxMenu(event, ${item.ledger_id})">
+                    <td>${item.transaction_date}</td>
+                    <td>${badge}</td>
+                    <td>${item.category_name || '-'}</td>
+                    <td>${item.asset_name || '<span style="color:#4a5568">연동 없음</span>'}</td>
+                    <td style="text-align:right" class="${amtClass}">${amtText}</td>
+                </tr>`;
+        }).join('');
+    }
+
+    // ── 카테고리 드롭다운 로드 ──────────────────────────────────────
+    async function loadCategories() {
+        const res  = await fetch('/api/ledger/categories');
+        const list = await res.json();
+        const sel  = document.getElementById('sel-category');
+        sel.innerHTML = list.map(c =>
+            `<option value="${c.category_id}">${c.category_name}</option>`
+        ).join('');
+    }
+
+    // ── 연동 자산 드롭다운 로드 ─────────────────────────────────────
+    async function loadLiquidAssets() {
+        const res  = await fetch('/api/ledger/liquid-assets');
+        const list = await res.json();
+        const sel  = document.getElementById('sel-asset');
+        // 기존 "-- 없음 --" 옵션 유지 후 자산 목록 추가
+        list.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value       = a.asset_id;
+            opt.textContent = `[${a.type_code}] ${a.display_name}`;
+            sel.appendChild(opt);
+        });
+    }
+
+    // ── 수입/지출 선택 ──────────────────────────────────────────────
+    function setDirection(dir) {
+        document.getElementById('direction-val').value = dir;
+        document.getElementById('btn-in').className  = 'dir-btn' + (dir === 'IN'  ? ' active-in'  : '');
+        document.getElementById('btn-out').className = 'dir-btn' + (dir === 'OUT' ? ' active-out' : '');
+    }
+
+    // ── 모달 열기/닫기 ──────────────────────────────────────────────
+    function openAddModal() {
+        document.getElementById('add-modal').classList.add('active');
+    }
+    function closeAddModal() {
+        document.getElementById('add-modal').classList.remove('active');
+        document.getElementById('inp-amount').value = '';
+        document.getElementById('inp-date').valueAsDate = new Date();
+        setDirection('IN');
+    }
+
+    // ── 내역 등록 ────────────────────────────────────────────────────
+    async function submitLedger() {
+        const amount = parseInt(document.getElementById('inp-amount').value);
+        if (!amount || amount <= 0) { alert('금액을 올바르게 입력하세요.'); return; }
+
+        const payload = {
+            direction:        document.getElementById('direction-val').value,
+            category_id:      parseInt(document.getElementById('sel-category').value),
+            asset_id:         parseInt(document.getElementById('sel-asset').value),
+            amount:           amount,
+            transaction_date: document.getElementById('inp-date').value
+        };
+
+        // fetch POST: JSON 직렬화(JSON.stringify)하여 전송. Content-Type 헤더 필수.
+        const res = await fetch('/api/ledger', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+
+        if (res.ok) {
+            closeAddModal();
+            loadSummary();      // 요약 새로고침
+            loadLedgerList();   // 목록 새로고침
+        } else {
+            alert('등록 실패: ' + result.message);
+        }
+    }
+
+    // ── 우클릭 컨텍스트 메뉴 ────────────────────────────────────────
+    function showCtxMenu(event, ledgerId) {
+        // event.preventDefault(): 브라우저 기본 우클릭 메뉴 차단
+        event.preventDefault();
+        selectedLedgerId = ledgerId;
+        const menu = document.getElementById('context-menu');
+        menu.style.display  = 'block';
+        menu.style.left     = event.clientX + 'px';
+        menu.style.top      = event.clientY + 'px';
+    }
+
+    // 다른 곳 클릭 시 컨텍스트 메뉴 닫기
+    document.addEventListener('click', () => {
+        document.getElementById('context-menu').style.display = 'none';
+    });
+
+    // ── 내역 삭제 ────────────────────────────────────────────────────
+    async function deleteSelected() {
+        if (!selectedLedgerId) return;
+        if (!confirm('이 내역을 삭제하면 연동 자산의 잔액도 복원됩니다.\n삭제하시겠습니까?')) return;
+
+        // Template Literal(백틱 문자열): `${변수}` 구문으로 변수를 문자열에 삽입
+        const res = await fetch(`/api/ledger/${selectedLedgerId}`, { method: 'DELETE' });
+        const result = await res.json();
+
+        if (res.ok) {
+            loadSummary();
+            loadLedgerList();
+        } else {
+            alert('삭제 실패: ' + result.message);
+        }
+        selectedLedgerId = null;
+    }
+</script>
+</body>
+</html>
