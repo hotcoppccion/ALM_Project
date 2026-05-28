@@ -58,6 +58,59 @@ body {
     margin-bottom: 4px;
 }
 
+/* ── 카드 내 주요 증시 ──────────────────────────────────── */
+.idx-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.idx-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 120px;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 7px 10px;
+}
+
+.idx-label {
+    font-size: 0.75rem;
+    color: #718096;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.idx-val {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #2d3748;
+    font-variant-numeric: tabular-nums;
+}
+
+.idx-chg {
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 5px;
+    padding: 1px 6px;
+}
+
+.idx-chg.up   { color: #e53935; background: #fff5f5; }
+.idx-chg.down { color: #1976d2; background: #e3f2fd; }
+.idx-chg.zero { color: #718096; background: #eeeeee; }
+
+.idx-updated {
+    font-size: 0.68rem;
+    color: #b0bec5;
+    width: 100%;
+    text-align: right;
+    margin-top: 2px;
+}
+
 .total-asset-card h2 {
     margin: 0;
     font-size: 1.8rem;

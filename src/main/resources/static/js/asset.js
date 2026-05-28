@@ -12,7 +12,13 @@ let isUpdateMode      = false;  // true: 수정 모드 / false: 등록 모드
 // ─────────────────────────────────────────────────────────────────
 // 초기 로드
 // ─────────────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        if (!data.hasPassword) { window.location.href = '/'; return; }
+    } catch (e) { window.location.href = '/'; return; }
+
     fetchTotalAsset();
     fetchAllAssets();
 });
@@ -146,13 +152,15 @@ async function openModal(typeCode, existingData) {
 
         inputs.innerHTML = `
             <label>은행 선택:</label><br>
-            <select id="bank_id" style="width:100%; padding:6px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
+            <select id="bank_id" onchange="onBankChange(this)" style="width:100%; padding:6px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
                 ${bankOptions}
+                <option value="__add__">＋ 새 은행 추가...</option>
             </select>
 
             <label>계좌 종류:</label><br>
-            <select id="type_id" style="width:100%; padding:6px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
+            <select id="type_id" onchange="onAccountTypeChange(this)" style="width:100%; padding:6px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
                 ${typeOptions}
+                <option value="__add__">＋ 새 계좌 종류 추가...</option>
             </select>
 
             <label>계좌번호:</label><br>
@@ -331,4 +339,59 @@ async function deleteSelectedAsset(assetId) {
     } catch (err) {
         alert('서버 통신 오류가 발생했습니다.');
     }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// 마스터 데이터 추가 (은행 / 계좌종류)
+// ─────────────────────────────────────────────────────────────────
+function onBankChange(sel) {
+    if (sel.value === '__add__') {
+        sel.value = sel.options[0]?.value || '';
+        addBank();
+    }
+}
+
+function onAccountTypeChange(sel) {
+    if (sel.value === '__add__') {
+        sel.value = sel.options[0]?.value || '';
+        addAccountType();
+    }
+}
+
+async function addBank() {
+    const name = prompt('추가할 은행명을 입력하세요.');
+    if (!name || !name.trim()) return;
+    try {
+        const res  = await fetch('/api/asset/banks', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name.trim() })
+        });
+        const data = await res.json();
+        if (!res.ok) { alert('추가 실패: ' + data.message); return; }
+        const sel    = document.getElementById('bank_id');
+        const addOpt = sel.querySelector('option[value="__add__"]');
+        const opt    = document.createElement('option');
+        opt.value = data.bank_id; opt.textContent = data.bank_name;
+        sel.insertBefore(opt, addOpt);
+        sel.value = data.bank_id;
+    } catch (e) { alert('서버 통신 오류가 발생했습니다.'); }
+}
+
+async function addAccountType() {
+    const name = prompt('추가할 계좌 종류를 입력하세요. (예: 파킹통장)');
+    if (!name || !name.trim()) return;
+    try {
+        const res  = await fetch('/api/asset/account-types', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name.trim() })
+        });
+        const data = await res.json();
+        if (!res.ok) { alert('추가 실패: ' + data.message); return; }
+        const sel    = document.getElementById('type_id');
+        const addOpt = sel.querySelector('option[value="__add__"]');
+        const opt    = document.createElement('option');
+        opt.value = data.type_id; opt.textContent = data.type_name;
+        sel.insertBefore(opt, addOpt);
+        sel.value = data.type_id;
+    } catch (e) { alert('서버 통신 오류가 발생했습니다.'); }
 }

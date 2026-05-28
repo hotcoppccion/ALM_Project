@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>ALM - 투자 포트폴리오</title>
+    <link rel="stylesheet" href="/css/Portfolio.css">
+</head>
+<body>
+
+<!-- 헤더 -->
+<div class="page-header">
+    <a href="/main.html" class="back-btn">← 대시보드</a>
+    <div>
+        <h1>📈 투자 포트폴리오</h1>
+        <div class="subtitle">KIS API 실시간 시세 연동</div>
+    </div>
+</div>
+
+<!-- 요약 바 -->
+<div class="summary-bar">
+    <div class="summary-item">
+        <span class="sum-label">보유 종목</span>
+        <span class="sum-val" id="sum-count">-</span>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-item">
+        <span class="sum-label">총 매입금액</span>
+        <span class="sum-val" id="sum-book">-</span>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-item">
+        <span class="sum-label">총 평가금액</span>
+        <span class="sum-val" id="sum-current">-</span>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-item">
+        <span class="sum-label">평가손익</span>
+        <span class="sum-val" id="sum-profit">-</span>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-item">
+        <span class="sum-label">수익률</span>
+        <span class="sum-val" id="sum-rate">-</span>
+    </div>
+</div>
+
+<!-- 액션 바 -->
+<div class="action-bar">
+    <button class="add-btn buy-btn" onclick="openBuyModal()">＋ 매수</button>
+    <button class="add-btn sell-btn" onclick="openSellModal()">－ 매도</button>
+</div>
+
+<!-- 포트폴리오 테이블 -->
+<div class="table-wrap">
+    <table class="portfolio-table">
+        <thead>
+            <tr>
+                <th>종목명</th>
+                <th>코드</th>
+                <th>보유수량</th>
+                <th>평균단가</th>
+                <th>현재가</th>
+                <th>평가금액</th>
+                <th>평가손익</th>
+                <th>수익률</th>
+                <th>등락률</th>
+            </tr>
+        </thead>
+        <tbody id="portfolio-body">
+            <tr><td colspan="9" class="loading-cell">데이터를 불러오는 중...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- 매매 일지 섹션 -->
+<div class="log-section">
+    <div class="log-header">
+        <h2>📋 매매 일지</h2>
+    </div>
+    <table class="log-table">
+        <thead>
+            <tr>
+                <th>날짜</th>
+                <th>종목명</th>
+                <th>구분</th>
+                <th>수량</th>
+                <th>단가</th>
+                <th>금액</th>
+                <th>실현손익</th>
+                <th>매매근거</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="log-body">
+            <tr><td colspan="9" class="loading-cell">데이터를 불러오는 중...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ══════════════════ 모달: 매수 ══════════════════ -->
+<div class="modal-overlay" id="buy-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>📈 매수 등록</h3>
+            <button class="modal-close" onclick="closeBuyModal()">✕</button>
+        </div>
+        <div class="modal-body">
+
+            <div class="form-group">
+                <label>증권 계좌 <span class="required">*</span></label>
+                <select id="buy-asset-id">
+                    <option value="">-- 계좌 선택 --</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>종목 코드 <span class="required">*</span></label>
+                    <input type="text" id="buy-code" placeholder="예: 005930"
+                           oninput="lookupCode('buy')" style="text-transform:uppercase">
+                </div>
+                <div class="form-group">
+                    <label>종목명 <span class="required">*</span></label>
+                    <input type="text" id="buy-name" placeholder="종목명 직접 입력">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>수량 <span class="required">*</span></label>
+                    <input type="number" id="buy-qty" placeholder="주" min="1">
+                </div>
+                <div class="form-group">
+                    <label>매수가 (원) <span class="required">*</span></label>
+                    <input type="number" id="buy-price" placeholder="1주당 가격" min="1">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>거래일 <span class="required">*</span></label>
+                <input type="date" id="buy-date">
+            </div>
+
+            <div class="form-group">
+                <label>매수 근거 <span class="optional">(선택)</span></label>
+                <textarea id="buy-reason" rows="2" placeholder="매수 이유, 목표 수익률 등"></textarea>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeBuyModal()">취소</button>
+            <button class="btn-buy" onclick="submitBuy()">매수 등록</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════ 모달: 매도 ══════════════════ -->
+<div class="modal-overlay" id="sell-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>📉 매도 등록</h3>
+            <button class="modal-close" onclick="closeSellModal()">✕</button>
+        </div>
+        <div class="modal-body">
+
+            <div class="form-group">
+                <label>종목 선택 <span class="required">*</span></label>
+                <select id="sell-stock">
+                    <option value="">-- 보유 종목 선택 --</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>수량 <span class="required">*</span></label>
+                    <input type="number" id="sell-qty" placeholder="주" min="1">
+                </div>
+                <div class="form-group">
+                    <label>매도가 (원) <span class="required">*</span></label>
+                    <input type="number" id="sell-price" placeholder="1주당 가격" min="1">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>거래일 <span class="required">*</span></label>
+                <input type="date" id="sell-date">
+            </div>
+
+            <div class="form-group">
+                <label>매도 근거 <span class="optional">(선택)</span></label>
+                <textarea id="sell-reason" rows="2" placeholder="매도 이유, 실현 손익 메모 등"></textarea>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeSellModal()">취소</button>
+            <button class="btn-sell" onclick="submitSell()">매도 등록</button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/portfolio.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>ALM - 재무 목표</title>
+    <link rel="stylesheet" href="/css/Goal.css">
+</head>
+<body>
+
+<!-- 헤더 -->
+<div class="page-header">
+    <a href="/main.html" class="back-btn">← 대시보드</a>
+    <div>
+        <h1>🎯 재무 목표</h1>
+        <div class="subtitle">목표 금액 달성률 추적</div>
+    </div>
+</div>
+
+<!-- 요약 바 -->
+<div class="summary-bar">
+    <div class="summary-item">
+        <span class="sum-label">전체 목표</span>
+        <span class="sum-val" id="sum-total">-</span>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-item">
+        <span class="sum-label">🏆 달성 완료</span>
+        <span class="sum-val done" id="sum-done">-</span>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-item">
+        <span class="sum-label">🚀 진행 중</span>
+        <span class="sum-val progress" id="sum-progress">-</span>
+    </div>
+</div>
+
+<!-- 목표 추가 버튼 -->
+<div class="action-bar">
+    <button class="add-btn" onclick="openAddModal()">＋ 목표 추가</button>
+</div>
+
+<!-- 목표 카드 그리드 -->
+<div class="goal-grid" id="goal-grid">
+    <div class="loading-msg">데이터를 불러오는 중...</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     모달: 목표 추가
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="add-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>🎯 목표 추가</h3>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+
+            <div class="form-group">
+                <label>목표명 <span class="required">*</span></label>
+                <input type="text" id="inp-name" placeholder="예: 비상금 마련, 여행 자금">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>목표 금액 (원) <span class="required">*</span></label>
+                    <input type="number" id="inp-target" placeholder="예: 10000000" min="1">
+                </div>
+                <div class="form-group">
+                    <label>마감일 <span class="optional">(선택)</span></label>
+                    <input type="date" id="inp-end-date">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>연동 자산 <span class="optional">(선택 안 하면 전체 자산 합계 기준)</span></label>
+                <select id="inp-asset">
+                    <option value="0">-- 전체 자산 합계 기준 --</option>
+                </select>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal()">취소</button>
+            <button class="btn-submit" onclick="submitGoal()">등록</button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/goal.js"></script>
+</body>
+</html>

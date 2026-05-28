@@ -1,12 +1,15 @@
 package com.alm.util;
 
 /**
- * [Exception Layer] 시스템 내 참조 무결성 및 제약 조건 위반 시 발생하는 사용자 정의 예외 클래스입니다.
- * 데이터 삭제 등 민감한 작업 수행 중 발생할 수 있는 오류의 구체적인 사유를 전달합니다.
+ * 참조 무결성 위반 시 던지는 Checked 예외.
+ *
+ * [Checked 선택 이유]
+ *   "참조 중인 자산 삭제 불가"는 예상 가능한 비즈니스 규칙 위반이다.
+ *   컴파일러가 catch 를 강제하면 Controller 에서 실수로 처리를 누락하는 것을 방지할 수 있다.
+ *   DeleteValidatorService 가 throw 하고, AssetController 가 catch 하여 400 응답에 담는다.
  */
 public class ConstraintException extends Exception {
 
-    // 예외 발생 시 화면에 출력될 구체적인 에러 메시지
     private final String errorMessage;
 
     public ConstraintException(String message) {
@@ -14,10 +17,7 @@ public class ConstraintException extends Exception {
         this.errorMessage = message;
     }
 
-    /**
-     * 발생한 예외의 상세 에러 메시지를 반환합니다.
-     * @return 구체적인 제약 조건 위반 사유
-     */
+    /** e.getMessage() 와 동일한 값. Controller 에서는 getMessage() 사용이 더 일반적. */
     public String getErrorMessage() {
         return errorMessage;
     }

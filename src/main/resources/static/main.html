@@ -67,25 +67,44 @@
             </div>
         </div>
 
-        <!-- 재무 목표 (개발 예정) -->
-        <div class="card pending">
+        <!-- 재무 목표 (활성) -->
+        <div class="card active" onclick="location.href='/Goal.html'">
             <div class="card-header">
                 🎯 재무 목표
-                <span class="card-badge pending-badge">개발 예정</span>
+                <span class="card-badge active-badge">사용 가능</span>
             </div>
-            <div class="card-body pending-body">
-                <p>목표 금액과 달성률을 시각적으로 관리합니다.</p>
+            <div class="card-body">
+                <div class="rep-label">🎯 목표 달성률 추적</div>
+                <div id="goal-summary" style="padding:8px 0; font-size:13px; color:#a0aec0;">
+                    불러오는 중...
+                </div>
+                <div class="card-footer-hint">클릭하여 재무 목표 관리 →</div>
             </div>
         </div>
 
-        <!-- 투자 포트폴리오 (개발 예정) -->
-        <div class="card pending">
+        <!-- 투자 포트폴리오 (활성) -->
+        <div class="card active" onclick="location.href='/Portfolio.html'">
             <div class="card-header">
                 📈 투자 포트폴리오
-                <span class="card-badge pending-badge">개발 예정</span>
+                <span class="card-badge active-badge">사용 가능</span>
             </div>
-            <div class="card-body pending-body">
-                <p>보유 종목 현황과 매매 이력을 관리합니다.</p>
+            <div class="card-body">
+                <!-- 주요 증시 -->
+                <div class="rep-label">📊 주요 증시</div>
+                <div class="idx-row">
+                    <div class="idx-item">
+                        <span class="idx-label">🇰🇷 코스피</span>
+                        <span class="idx-val" id="kospi-val">--</span>
+                        <span class="idx-chg zero" id="kospi-chg">--%</span>
+                    </div>
+                    <span class="idx-updated" id="m-updated"></span>
+                </div>
+                <!-- 보유 종목 요약 -->
+                <div class="rep-label" style="margin-top:10px;">💼 보유 현황</div>
+                <div id="invest-summary" style="padding:4px 0; font-size:13px; color:#a0aec0;">
+                    불러오는 중...
+                </div>
+                <div class="card-footer-hint">클릭하여 투자 포트폴리오 관리 →</div>
             </div>
         </div>
 
@@ -95,6 +114,35 @@
 
 <script src="/js/main.js"></script>
 <script>
+    // 재무 목표 요약을 대시보드 카드에 표시
+    fetch('/api/goals').then(r => r.json()).then(list => {
+        const total  = list.length;
+        const done   = list.filter(g => g.achievement_rate >= 100).length;
+        const inProg = total - done;
+        document.getElementById('goal-summary').innerHTML =
+            `<span style="color:#e2e8f0">전체 ${total}개</span>
+             &nbsp;&nbsp;
+             <span style="color:#68d391">🏆 달성 ${done}개</span>
+             &nbsp;&nbsp;
+             <span style="color:#63b3ed">🚀 진행 ${inProg}개</span>`;
+    }).catch(() => {
+        document.getElementById('goal-summary').textContent = '데이터 없음';
+    });
+
+    // 투자 포트폴리오 요약을 대시보드 카드에 표시
+    fetch('/api/invest/summary').then(r => r.json()).then(data => {
+        const fmt = n => new Intl.NumberFormat('ko-KR').format(n) + '원';
+        const profit = data.totalProfit || 0;
+        const sign   = profit >= 0 ? '+' : '';
+        const color  = profit > 0 ? '#fc8181' : profit < 0 ? '#68d391' : '#a0aec0';
+        document.getElementById('invest-summary').innerHTML =
+            `<span style="color:#e2e8f0">${data.holdingCount || 0}종목 보유</span>
+             &nbsp;&nbsp;
+             <span style="color:${color}">${sign}${fmt(profit)} (${sign}${(data.profitRate||0).toFixed(2)}%)</span>`;
+    }).catch(() => {
+        document.getElementById('invest-summary').textContent = '데이터 없음';
+    });
+
     // 가계부 이달 요약을 대시보드 카드에 표시
     fetch('/api/ledger/summary').then(r => r.json()).then(data => {
         const fmt = n => new Intl.NumberFormat('ko-KR').format(n) + '원';
