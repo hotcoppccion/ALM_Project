@@ -24,15 +24,10 @@ public class MarketDataScheduler {
     private static volatile Map<String, Object> cached = buildEmpty();
     private static volatile long lastUpdatedMs = 0;
 
-    /**
-     * 1초마다 코스피·QQQ 지표 갱신. 실패 시 직전 캐시 값 유지.
-     * initialDelay = 0 : 앱 시작 직후 즉시 첫 실행.
-     */
     @Scheduled(fixedRate = 1000, initialDelay = 0)
     public void refresh() {
         Map<String, Object> next = new LinkedHashMap<>();
 
-        // 코스피
         try {
             String[] kospi = APIClient.getKospiIndex();
             next.put("kospi", indexMap(kospi[0], kospi[1], false));
@@ -40,16 +35,6 @@ public class MarketDataScheduler {
             System.err.println("[SCHEDULER] 코스피 조회 실패: " + e.getMessage());
             Object prev = cached.get("kospi");
             next.put("kospi", prev != null ? prev : indexMap("--", "0", true));
-        }
-
-        // 나스닥 (QQQ ETF — KIS 해외주식 API)
-        try {
-            String[] nasdaq = APIClient.getNasdaqIndex();
-            next.put("nasdaq", indexMap(nasdaq[0], nasdaq[1], false));
-        } catch (Exception e) {
-            System.err.println("[SCHEDULER] 나스닥(QQQ) 조회 실패: " + e.getMessage());
-            Object prev = cached.get("nasdaq");
-            next.put("nasdaq", prev != null ? prev : indexMap("--", "0", true));
         }
 
         cached = next;
@@ -69,8 +54,7 @@ public class MarketDataScheduler {
 
     private static Map<String, Object> buildEmpty() {
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("kospi",  indexMap("--", "0", false));
-        m.put("nasdaq", indexMap("--", "0", false));
+        m.put("kospi", indexMap("--", "0", false));
         return m;
     }
 }

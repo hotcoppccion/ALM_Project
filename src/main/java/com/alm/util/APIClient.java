@@ -28,9 +28,6 @@ import java.time.Instant;
  *   KIS API 는 해외 가격을 달러로 반환. 현재는 원화 환산 없이 달러 그대로 사용.
  *   향후 환율 API 추가로 원화 변환 확장 가능.
  *
- * [나스닥/원달러]
- *   KIS 해외주식 현재가 API(HHDFS76200200)로 QQQ(나스닥100 ETF) 조회.
- *   지수 직접 조회 대신 ETF 가격을 나스닥 지표로 사용.
  */
 public class APIClient {
 
@@ -189,17 +186,6 @@ public class APIClient {
         return new String[]{ priceInt, changeRate, stockName, marketType };
     }
 
-    // ── 나스닥 지표 (QQQ — 나스닥100 ETF) ───────────────────────────
-
-    /**
-     * QQQ(나스닥100 ETF) 현재가. KIS 해외주식 API(HHDFS76200200) 사용.
-     * 나스닥 종합지수 직접 조회 엔드포인트가 KIS에 없으므로 ETF 로 대체.
-     * @return String[] { 현재가(달러, 정수부), 전일대비등락률(%) }
-     */
-    public static String[] getNasdaqIndex() throws Exception {
-        String[] info = getOverseasStockInfo("QQQ"); // { price, changeRate, name, market }
-        return new String[]{ info[0], info[1] };
-    }
 
     // ── 코스피 지수 조회 ──────────────────────────────────────────────
 
