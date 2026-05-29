@@ -244,4 +244,19 @@ public class GoalRepository {
         }
         return list;
     }
+
+    /** 자산 삭제 가능 여부 판단용 — 해당 자산을 목표로 연동한 행 존재 여부. */
+    public boolean existsByAssetId(long assetId) {
+        String sql = "SELECT COUNT(*) FROM goal_table WHERE asset_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, assetId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            System.err.println("[ERROR] 목표 참조 여부 확인 실패: " + e.getMessage());
+        }
+        return false;
+    }
 }

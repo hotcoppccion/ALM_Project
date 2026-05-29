@@ -1,5 +1,7 @@
 package com.alm.service;
 
+import com.alm.repository.GoalRepository;
+import com.alm.repository.InvestRepository;
 import com.alm.repository.LedgerRepository;
 import com.alm.util.ConstraintException;
 
@@ -13,22 +15,22 @@ import com.alm.util.ConstraintException;
 public class DeleteValidatorService {
 
     private final LedgerRepository ledgerRepository = new LedgerRepository();
+    private final GoalRepository   goalRepository   = new GoalRepository();
+    private final InvestRepository investRepository = new InvestRepository();
 
     /**
      * 삭제 요청 자산의 하위 참조 검증.
      * 참조가 하나라도 있으면 ConstraintException throw → 삭제 프로세스 중단.
-     *
-     * [향후 구현 예정]
-     *   목표 참조(GoalRepository.existsByAssetId), 투자 참조(InvestRepository.existsByAssetId) 추가.
      *
      * @throws ConstraintException 참조 데이터 존재 시 (메시지에 구체적 사유 포함)
      */
     public void checkDependency(long assetId) throws ConstraintException {
         if (ledgerRepository.existsByAssetId(assetId))
             throw new ConstraintException("해당 자산과 연결된 가계부 내역이 존재하여 삭제할 수 없습니다.");
-
-        // TODO: GoalRepository.existsByAssetId(assetId) 구현 후 연동
-        // TODO: InvestRepository.existsByAssetId(assetId) 구현 후 연동
+        if (goalRepository.existsByAssetId(assetId))
+            throw new ConstraintException("해당 자산과 연결된 재무 목표가 존재하여 삭제할 수 없습니다.");
+        if (investRepository.existsByAssetId(assetId))
+            throw new ConstraintException("해당 계좌에 보유 중인 투자 종목이 존재하여 삭제할 수 없습니다.");
     }
 
     /**

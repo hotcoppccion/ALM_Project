@@ -310,6 +310,21 @@ public class InvestRepository {
         return 0L;
     }
 
+    /** 자산 삭제 가능 여부 판단용 — 해당 계좌에 보유 종목 존재 여부. */
+    public boolean existsByAssetId(long assetId) {
+        String sql = "SELECT COUNT(*) FROM invest_portfolio WHERE asset_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, assetId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            System.err.println("[ERROR] 투자 참조 여부 확인 실패: " + e.getMessage());
+        }
+        return false;
+    }
+
     // ── 헬퍼 ─────────────────────────────────────────────────────────
 
     private InvestPortfolioDTO mapPortfolio(ResultSet rs) throws SQLException {

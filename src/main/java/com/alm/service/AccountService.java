@@ -22,15 +22,4 @@ public class AccountService {
         return account.getBalance() * (account.getAccount_interest() / 100.0);
     }
 
-    /**
-     * 계좌 간 이체 (미구현 — 스텁).
-     *
-     * [구현 예정]
-     *   두 UPDATE (차감 + 증가)를 하나의 트랜잭션으로 묶어야 한다.
-     *   JDBC: conn.setAutoCommit(false) → 쿼리 2건 → commit / rollback.
-     */
-    public boolean transferBetweenAccounts(long fromAssetId, long toAssetId, long amount) {
-        // TODO: 트랜잭션 기반 이체 구현
-        return true;
-    }
 }

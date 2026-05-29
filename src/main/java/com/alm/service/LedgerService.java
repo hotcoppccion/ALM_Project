@@ -94,10 +94,4 @@ public class LedgerService {
         if (assetId > 0) ledgerRepository.adjustAssetBalance(assetId, -savedAmount);
     }
 
-    // ── 미구현 ────────────────────────────────────────────────────────
-
-    /** 정기 거래 스케줄러 기능 구현 시 완성 예정. */
-    public String calculateNextDate(String baseDate, int pValue, String pUnit) {
-        throw new UnsupportedOperationException("calculateNextDate() 미구현");
-    }
 }

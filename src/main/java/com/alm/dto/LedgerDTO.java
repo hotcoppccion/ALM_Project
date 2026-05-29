@@ -12,7 +12,7 @@ package com.alm.dto;
 public abstract class LedgerDTO {
 
     private int    ledger_id;  // ledger_master PK (AUTO_INCREMENT)
-    private String type_code;  // 내역 유형: "GEN" / "FIX_R" / "REG_R" / "VAR_R"
+    private String type_code;  // 내역 유형: "GEN" (일반 수입/지출)
 
     public int    getLedger_id()                  { return ledger_id; }
     public void   setLedger_id(int ledger_id)     { this.ledger_id = ledger_id; }

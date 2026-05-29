@@ -41,7 +41,7 @@ public class MarketDataScheduler {
             next.put("kospi", prev != null ? prev : indexMap("--", "0", true));
         }
 
-        // TODO: 나스닥/원달러 — KIS 모의투자 서버가 해외 API 미지원. 실전 계좌 전환 후 추가.
+        // 나스닥/원달러: KIS 모의투자 서버가 해외 지수 API 미지원 — 실전 계좌 전환 후 추가 가능.
 
         cached = next;
         lastUpdatedMs = System.currentTimeMillis();
