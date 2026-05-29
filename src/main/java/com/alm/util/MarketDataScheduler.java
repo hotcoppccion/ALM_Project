@@ -25,13 +25,14 @@ public class MarketDataScheduler {
     private static volatile long lastUpdatedMs = 0;
 
     /**
-     * 1초마다 코스피 지수 갱신. 실패 시 직전 캐시 값 유지.
-     * initialDelay = 0 : 앱 시작 직후 즉시 첫 실행 (지연 없이 초기 데이터 확보).
+     * 1초마다 코스피·나스닥·원달러 지수 갱신. 실패 시 직전 캐시 값 유지.
+     * initialDelay = 0 : 앱 시작 직후 즉시 첫 실행.
      */
     @Scheduled(fixedRate = 1000, initialDelay = 0)
     public void refresh() {
         Map<String, Object> next = new LinkedHashMap<>();
 
+        // 코스피
         try {
             String[] kospi = APIClient.getKospiIndex();
             next.put("kospi", indexMap(kospi[0], kospi[1], false));
@@ -41,13 +42,31 @@ public class MarketDataScheduler {
             next.put("kospi", prev != null ? prev : indexMap("--", "0", true));
         }
 
-        // 나스닥/원달러: KIS 모의투자 서버가 해외 지수 API 미지원 — 실전 계좌 전환 후 추가 가능.
+        // 나스닥 (실전 계좌 전용)
+        try {
+            String[] nasdaq = APIClient.getNasdaqIndex();
+            next.put("nasdaq", indexMap(nasdaq[0], nasdaq[1], false));
+        } catch (Exception e) {
+            System.err.println("[SCHEDULER] 나스닥 조회 실패: " + e.getMessage());
+            Object prev = cached.get("nasdaq");
+            next.put("nasdaq", prev != null ? prev : indexMap("--", "0", true));
+        }
+
+        // 원달러 환율 (실전 계좌 전용)
+        try {
+            String[] usd = APIClient.getUsdKrwRate();
+            next.put("usdkrw", indexMap(usd[0], usd[1], false));
+        } catch (Exception e) {
+            System.err.println("[SCHEDULER] 원달러 조회 실패: " + e.getMessage());
+            Object prev = cached.get("usdkrw");
+            next.put("usdkrw", prev != null ? prev : indexMap("--", "0", true));
+        }
 
         cached = next;
         lastUpdatedMs = System.currentTimeMillis();
     }
 
-    public static Map<String, Object> getCached()      { return cached; }
+    public static Map<String, Object> getCached()        { return cached; }
     public static long                getLastUpdatedMs() { return lastUpdatedMs; }
 
     private static Map<String, Object> indexMap(String value, String change, boolean error) {
@@ -58,10 +77,11 @@ public class MarketDataScheduler {
         return m;
     }
 
-    /** 첫 @Scheduled 실행 전까지 보여줄 초기 빈 데이터. */
     private static Map<String, Object> buildEmpty() {
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("kospi", indexMap("--", "0", false));
+        m.put("kospi",  indexMap("--", "0", false));
+        m.put("nasdaq", indexMap("--", "0", false));
+        m.put("usdkrw", indexMap("--", "0", false));
         return m;
     }
 }

@@ -28,9 +28,8 @@ import java.time.Instant;
  *   KIS API 는 해외 가격을 달러로 반환. 현재는 원화 환산 없이 달러 그대로 사용.
  *   향후 환율 API 추가로 원화 변환 확장 가능.
  *
- * [나스닥/원달러 지수 미제공]
- *   KIS 모의투자 서버가 해외 지수 API 를 미지원.
- *   실전 계좌 전환 시 TR_ID FHKST03030100 / HHDFS76200200 으로 추가 가능.
+ * [나스닥/원달러 지수]
+ *   실전 계좌 전용 엔드포인트. TR_ID FHKST03030100(나스닥), FHKST03030200(원달러환율).
  */
 public class APIClient {
 
@@ -187,6 +186,74 @@ public class APIClient {
                           : excd;
 
         return new String[]{ priceInt, changeRate, stockName, marketType };
+    }
+
+    // ── 나스닥 지수 조회 ─────────────────────────────────────────────
+
+    /**
+     * 나스닥 종합지수. TR_ID: FHKST03030100, FID_INPUT_ISCD=COMP.
+     * 실전 계좌 전용 — 모의투자 서버에서는 동작하지 않는다.
+     * @return String[] { 현재값, 전일대비등락률(%) }
+     */
+    public static String[] getNasdaqIndex() throws Exception {
+        String token = getToken();
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL
+                        + "/uapi/overseas-price/v1/quotations/inquire-index-price"
+                        + "?FID_COND_MRKT_DIV_CODE=N&FID_INPUT_ISCD=COMP"))
+                .header("authorization", "Bearer " + token)
+                .header("appkey",    APP_KEY)
+                .header("appsecret", APP_SECRET)
+                .header("tr_id",     "FHKST03030100")
+                .header("custtype",  "P")
+                .GET().build();
+
+        HttpResponse<String> res = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
+        JsonNode json = OM.readTree(res.body());
+        String rtCd = json.path("rt_cd").asText("");
+        if (!"0".equals(rtCd)) {
+            System.err.println("[KIS 나스닥] 오류: " + res.body());
+            throw new Exception("나스닥 조회 실패: " + json.path("msg1").asText(res.body()));
+        }
+        JsonNode out = json.path("output");
+        return new String[]{
+            out.path("ovrs_nmix_prpr").asText("0"),
+            out.path("prdy_ctrt").asText("0")
+        };
+    }
+
+    // ── 원달러 환율 조회 ─────────────────────────────────────────────
+
+    /**
+     * 원달러(USD/KRW) 현재 환율. TR_ID: FHKST03030200, FID_INPUT_ISCD=USD.
+     * 실전 계좌 전용.
+     * @return String[] { 현재 환율(원), 전일대비등락률(%) }
+     */
+    public static String[] getUsdKrwRate() throws Exception {
+        String token = getToken();
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL
+                        + "/uapi/overseas-price/v1/quotations/inquire-index-price"
+                        + "?FID_COND_MRKT_DIV_CODE=X&FID_INPUT_ISCD=USD"))
+                .header("authorization", "Bearer " + token)
+                .header("appkey",    APP_KEY)
+                .header("appsecret", APP_SECRET)
+                .header("tr_id",     "FHKST03030200")
+                .header("custtype",  "P")
+                .GET().build();
+
+        HttpResponse<String> res = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
+        JsonNode json = OM.readTree(res.body());
+        String rtCd = json.path("rt_cd").asText("");
+        if (!"0".equals(rtCd)) {
+            System.err.println("[KIS 원달러] 오류: " + res.body());
+            throw new Exception("원달러 환율 조회 실패: " + json.path("msg1").asText(res.body()));
+        }
+        JsonNode out = json.path("output");
+        return new String[]{
+            out.path("ovrs_nmix_prpr").asText("0"),
+            out.path("prdy_ctrt").asText("0")
+        };
     }
 
     // ── 코스피 지수 조회 ──────────────────────────────────────────────
