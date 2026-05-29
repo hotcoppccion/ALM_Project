@@ -28,9 +28,9 @@ import java.time.Instant;
  *   KIS API 는 해외 가격을 달러로 반환. 현재는 원화 환산 없이 달러 그대로 사용.
  *   향후 환율 API 추가로 원화 변환 확장 가능.
  *
- * [나스닥/원달러 환율]
- *   KIS OpenAPI 는 해외 지수 전용 엔드포인트가 없음.
- *   Yahoo Finance 공개 API(%5EIXIC, KRW%3DX)로 대체.
+ * [나스닥/원달러]
+ *   KIS 해외주식 현재가 API(HHDFS76200200)로 QQQ(나스닥100 ETF) 조회.
+ *   지수 직접 조회 대신 ETF 가격을 나스닥 지표로 사용.
  */
 public class APIClient {
 
@@ -189,59 +189,16 @@ public class APIClient {
         return new String[]{ priceInt, changeRate, stockName, marketType };
     }
 
-    // ── 나스닥 지수 조회 (Yahoo Finance) ────────────────────────────
+    // ── 나스닥 지표 (QQQ — 나스닥100 ETF) ───────────────────────────
 
     /**
-     * 나스닥 종합지수 현재값. Yahoo Finance 공개 API 사용 (인증 불필요).
-     * KIS OpenAPI 는 해외 지수 전용 엔드포인트를 제공하지 않으므로 Yahoo Finance 로 대체.
-     * @return String[] { 현재값(정수), 전일대비등락률(%) }
+     * QQQ(나스닥100 ETF) 현재가. KIS 해외주식 API(HHDFS76200200) 사용.
+     * 나스닥 종합지수 직접 조회 엔드포인트가 KIS에 없으므로 ETF 로 대체.
+     * @return String[] { 현재가(달러, 정수부), 전일대비등락률(%) }
      */
     public static String[] getNasdaqIndex() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(
-                    "https://query1.finance.yahoo.com/v8/finance/chart/%5EIXIC?interval=1m&range=1d"))
-                .header("User-Agent", "Mozilla/5.0")
-                .GET().build();
-
-        HttpResponse<String> res = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
-        JsonNode meta = OM.readTree(res.body())
-                          .path("chart").path("result").get(0).path("meta");
-
-        double price     = meta.path("regularMarketPrice").asDouble(0);
-        double prevClose = meta.path("chartPreviousClose").asDouble(0);
-        double change    = prevClose > 0 ? (price - prevClose) / prevClose * 100 : 0;
-
-        return new String[]{
-            String.valueOf((long) price),
-            String.format("%.2f", change)
-        };
-    }
-
-    // ── 원달러 환율 조회 (Yahoo Finance) ────────────────────────────
-
-    /**
-     * 원달러(USD/KRW) 현재 환율. Yahoo Finance 공개 API 사용 (인증 불필요).
-     * @return String[] { 현재 환율(원, 정수), 전일대비등락률(%) }
-     */
-    public static String[] getUsdKrwRate() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(
-                    "https://query1.finance.yahoo.com/v8/finance/chart/KRW%3DX?interval=1m&range=1d"))
-                .header("User-Agent", "Mozilla/5.0")
-                .GET().build();
-
-        HttpResponse<String> res = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
-        JsonNode meta = OM.readTree(res.body())
-                          .path("chart").path("result").get(0).path("meta");
-
-        double price     = meta.path("regularMarketPrice").asDouble(0);
-        double prevClose = meta.path("chartPreviousClose").asDouble(0);
-        double change    = prevClose > 0 ? (price - prevClose) / prevClose * 100 : 0;
-
-        return new String[]{
-            String.valueOf((long) price),
-            String.format("%.2f", change)
-        };
+        String[] info = getOverseasStockInfo("QQQ"); // { price, changeRate, name, market }
+        return new String[]{ info[0], info[1] };
     }
 
     // ── 코스피 지수 조회 ──────────────────────────────────────────────

@@ -25,7 +25,7 @@ public class MarketDataScheduler {
     private static volatile long lastUpdatedMs = 0;
 
     /**
-     * 1초마다 코스피·나스닥·원달러 지수 갱신. 실패 시 직전 캐시 값 유지.
+     * 1초마다 코스피·QQQ 지표 갱신. 실패 시 직전 캐시 값 유지.
      * initialDelay = 0 : 앱 시작 직후 즉시 첫 실행.
      */
     @Scheduled(fixedRate = 1000, initialDelay = 0)
@@ -42,24 +42,14 @@ public class MarketDataScheduler {
             next.put("kospi", prev != null ? prev : indexMap("--", "0", true));
         }
 
-        // 나스닥 (실전 계좌 전용)
+        // 나스닥 (QQQ ETF — KIS 해외주식 API)
         try {
             String[] nasdaq = APIClient.getNasdaqIndex();
             next.put("nasdaq", indexMap(nasdaq[0], nasdaq[1], false));
         } catch (Exception e) {
-            System.err.println("[SCHEDULER] 나스닥 조회 실패: " + e.getMessage());
+            System.err.println("[SCHEDULER] 나스닥(QQQ) 조회 실패: " + e.getMessage());
             Object prev = cached.get("nasdaq");
             next.put("nasdaq", prev != null ? prev : indexMap("--", "0", true));
-        }
-
-        // 원달러 환율 (실전 계좌 전용)
-        try {
-            String[] usd = APIClient.getUsdKrwRate();
-            next.put("usdkrw", indexMap(usd[0], usd[1], false));
-        } catch (Exception e) {
-            System.err.println("[SCHEDULER] 원달러 조회 실패: " + e.getMessage());
-            Object prev = cached.get("usdkrw");
-            next.put("usdkrw", prev != null ? prev : indexMap("--", "0", true));
         }
 
         cached = next;
@@ -81,7 +71,6 @@ public class MarketDataScheduler {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("kospi",  indexMap("--", "0", false));
         m.put("nasdaq", indexMap("--", "0", false));
-        m.put("usdkrw", indexMap("--", "0", false));
         return m;
     }
 }
