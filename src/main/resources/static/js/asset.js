@@ -442,7 +442,8 @@ async function openInterestModal() {
         </div>
     `;
     // 저장 버튼 숨김
-    modal.querySelector('[type=submit]').style.display = 'none';
+    const submitBtn = modal.querySelector('[type=submit]');
+    if (submitBtn) submitBtn.style.display = 'none';
 }
 
 async function viewInterest() {
