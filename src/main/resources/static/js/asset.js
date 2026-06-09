@@ -63,7 +63,17 @@ async function fetchAllAssets() {
                     <td>${asset.type_name  || '-'}</td>
                     <td>${asset.acc_number || '-'}</td>
                     <td>${asset.balance.toLocaleString()} 원</td>
-                    <td>${interest}</td>`;
+                    <td>${interest}</td>
+                    <td>
+                        <button onclick="viewInterest(${asset.asset_id})"
+                            style="padding:3px 8px; margin-right:4px; font-size:0.78rem;
+                                   background:#e8f0fe; color:#1a73e8; border:1px solid #c5d5f5;
+                                   border-radius:5px; cursor:pointer;">조회</button>
+                        <button onclick="applyInterest(${asset.asset_id})"
+                            style="padding:3px 8px; font-size:0.78rem;
+                                   background:#e6f4ea; color:#1e8e3e; border:1px solid #b7dfbf;
+                                   border-radius:5px; cursor:pointer;">지급</button>
+                    </td>`;
                 document.querySelector('#account-table tbody').appendChild(tr);
 
             } else if (asset.type_code === 'REA') {
@@ -394,4 +404,31 @@ async function addAccountType() {
         sel.insertBefore(opt, addOpt);
         sel.value = data.type_id;
     } catch (e) { alert('서버 통신 오류가 발생했습니다.'); }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// 이자 조회 / 지급
+// ─────────────────────────────────────────────────────────────────
+async function viewInterest(assetId) {
+    try {
+        const res  = await fetch(`/api/asset/${assetId}/interest`);
+        const data = await res.json();
+        if (!res.ok) { alert('조회 실패: ' + (data.message || '')); return; }
+        const amount = Math.round(data.annual_interest).toLocaleString();
+        alert(`예상 연간 이자 수익금: ${amount} 원`);
+    } catch (e) {
+        alert('서버 통신 오류가 발생했습니다.');
+    }
+}
+
+async function applyInterest(assetId) {
+    if (!confirm('이자를 지급하시겠습니까?\n잔액에 반영되고 가계부 수입으로 기록됩니다.')) return;
+    try {
+        const res  = await fetch(`/api/asset/${assetId}/interest`, { method: 'POST' });
+        const data = await res.json();
+        alert(data.message || '이자가 지급되었습니다.');
+        if (res.ok) location.reload();
+    } catch (e) {
+        alert('서버 통신 오류가 발생했습니다.');
+    }
 }
