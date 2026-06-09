@@ -94,11 +94,13 @@ public class AssetService {
         if (interest <= 0)
             throw new Exception("적용할 이자가 없습니다. 이자율 또는 잔액을 확인하세요.");
 
+        int categoryId = ledgerService.findOrCreateCategory("이자수입");
+
         Map<String, Object> payload = new HashMap<>();
         payload.put("direction",        "IN");
         payload.put("amount",           interest);
         payload.put("asset_id",         assetId);
-        payload.put("category_id",      1);                              // 기본 수입 카테고리
+        payload.put("category_id",      categoryId);
         payload.put("transaction_date", LocalDate.now().toString());
 
         ledgerService.processGeneralLedger(payload);

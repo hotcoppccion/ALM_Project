@@ -30,6 +30,19 @@ public class LedgerService {
         return Map.of("category_id", id, "category_name", categoryName.trim());
     }
 
+    /**
+     * 카테고리 이름으로 ID 조회. 없으면 자동 생성 후 반환.
+     * 이자수입 등 시스템 자동 기록 시 사용.
+     */
+    public int findOrCreateCategory(String categoryName) {
+        for (Map<String, Object> cat : ledgerRepository.findAllCategories()) {
+            if (categoryName.equals(cat.get("category_name"))) {
+                return (int) cat.get("category_id");
+            }
+        }
+        return ledgerRepository.insertCategory(categoryName);
+    }
+
     // ── 저장 ─────────────────────────────────────────────────────────
 
     /**
