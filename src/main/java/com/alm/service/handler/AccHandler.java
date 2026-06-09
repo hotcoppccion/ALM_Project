@@ -5,10 +5,7 @@ import com.alm.repository.AssetRepository;
 import com.alm.util.ParseUtil;
 import java.util.Map;
 
-/**
- * 금융계좌(ACC) 저장/수정 전략 (Strategy Pattern).
- * AssetService 는 AssetHandler 인터페이스만 바라보므로 DIP 준수.
- */
+/** 금융계좌(ACC) 저장/수정 핸들러. */
 public class AccHandler implements AssetHandler {
 
     @Override

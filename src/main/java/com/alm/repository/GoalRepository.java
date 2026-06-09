@@ -9,21 +9,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 재무 목표 DB 접근 계층.
- *
- * [설계 특이점]
- *   goal_table.asset_id 는 NULL 허용 (전체 자산 기준 목표).
- *   asset_master 에 ON DELETE SET NULL 설정 → 자산 삭제 시 목표는 남고 asset_id 가 NULL 로 전환.
- *
- * [asset_name 조회 — COALESCE + LEFT JOIN]
- *   자산 타입마다 이름 컬럼이 다르므로, 4개 자식 테이블을 모두 LEFT JOIN 후
- *   COALESCE 로 첫 번째 non-NULL 값을 선택한다.
- *   asset_id = NULL 이면 모두 NULL → Service 에서 "전체 자산 합계" 로 대체.
- *
- * [rs.wasNull() 패턴]
- *   getInt() 는 DB NULL 을 0 으로 반환한다.
- *   0 과 NULL 을 구분해야 하는 asset_id 컬럼은 getInt() 직후 rs.wasNull() 로 확인 후
- *   Integer nullable 필드에 null 또는 실제 값을 세팅한다.
+ * 재무 목표 Repository.
+ * asset_id 는 NULL 허용 (NULL = 전체 자산 기준 목표).
+ * asset_id 컬럼은 getInt() 후 rs.wasNull() 로 0 과 NULL 을 구분한다.
  */
 public class GoalRepository {
 
@@ -102,12 +90,7 @@ public class GoalRepository {
         return null;
     }
 
-    /**
-     * 목표 등록.
-     * asset_id / end_date 는 NULL 허용 필드 — setNull() 로 바인딩.
-     *
-     * @return 생성된 goal_id, 실패 시 -1
-     */
+    /** @return 생성된 goal_id, 실패 시 -1 */
     public int insertGoal(GoalDTO dto) {
         String sql =
             "INSERT INTO goal_table (asset_id, goal_name, target_amount, end_date) " +
@@ -155,11 +138,7 @@ public class GoalRepository {
 
     /**
      * 특정 자산의 현재 가치 조회.
-     *
-     * [단일 쿼리로 4개 타입 처리]
-     *   COALESCE(at2.balance, ca.balance, pa.current_value, re.price, 0)
-     *   → 해당 자산 타입의 LEFT JOIN 만 성공하고 나머지는 NULL
-     *   → COALESCE 가 첫 번째 non-NULL 값 선택. 마지막 0 은 미등록 상태 기본값.
+     * 4개 자식 테이블을 LEFT JOIN 후 COALESCE 로 해당 타입의 금액 컬럼을 선택한다.
      */
     public long getAssetCurrentValue(int assetId) {
         String sql =
@@ -183,10 +162,7 @@ public class GoalRepository {
         return 0L;
     }
 
-    /**
-     * 전체 자산 합계 조회 (asset_id = NULL 인 목표용).
-     * 4개 자식 테이블의 SUM 을 서브쿼리로 각각 구해 합산. 단 한 번의 DB 왕복.
-     */
+    /** 전체 자산 합계 조회 (asset_id = NULL 목표용). 서브쿼리로 4개 타입 SUM 합산. */
     public long getTotalAssetValue() {
         String sql =
             "SELECT " +
@@ -205,11 +181,7 @@ public class GoalRepository {
         return 0L;
     }
 
-    /**
-     * 목표 등록 모달용 자산 드롭다운 데이터 (ACC + CSH 만 허용).
-     * REA / PHY 는 목표 달성 추적 대상으로 부적합해 제외.
-     * LinkedHashMap 으로 JSON 키 순서 고정.
-     */
+    /** 목표 등록 드롭다운용 자산 목록. REA / PHY 는 잔액 추적 불가로 제외, ACC + CSH 만 반환. */
     public List<Map<String, Object>> findAllAssetsForSelect() {
         List<Map<String, Object>> list = new ArrayList<>();
         String sql =

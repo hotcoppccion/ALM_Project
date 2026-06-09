@@ -5,9 +5,7 @@ import com.alm.repository.AssetRepository;
 import com.alm.util.ParseUtil;
 import java.util.Map;
 
-/**
- * [전략 패턴] 현금(CSH) 저장/수정 전략.
- */
+/** 현금(CSH) 저장/수정 핸들러. */
 public class CshHandler implements AssetHandler {
 
     @Override

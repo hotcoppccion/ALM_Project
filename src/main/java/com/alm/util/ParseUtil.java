@@ -1,12 +1,9 @@
 package com.alm.util;
 
 /**
- * 타입 안전 파싱 헬퍼 모음.
- *
- * JSON 역직렬화 시 숫자가 Integer / Long / String 등 다양한 타입으로 넘어올 수 있으므로
- * toString() 후 파싱하는 방식으로 타입을 통일한다.
- * AssetService / LedgerService / GoalService 등 여러 곳에 중복됐던 파싱 로직을 한 곳으로 모았다.
- * 상태가 없는 순수 유틸리티 클래스이므로 모든 메서드를 static 으로 선언한다.
+ * 타입 안전 파싱 헬퍼.
+ * JSON 역직렬화 시 숫자가 Integer / Long / String 등 다양한 타입으로 넘어오므로
+ * toString() 후 파싱해 타입을 통일한다.
  */
 public class ParseUtil {
 

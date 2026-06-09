@@ -7,16 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 가계부 도메인 비즈니스 로직.
- *
- * [핵심 비즈니스 규칙]
- *   1. 내역 저장 시 연동 자산(ACC / CSH)의 잔액을 즉시 반영한다.
- *   2. 내역 삭제 시 저장된 금액의 부호를 반전해 잔액을 원상 복원한다.
- *   3. asset_id = 0 이면 자산 연동 없이 기록만 저장한다 (연동 선택 사항).
- *
- * [트랜잭션 부재]
- *   순수 JDBC 환경으로 @Transactional 미사용.
- *   내역 저장 성공 후 잔액 조정 실패 시 불일치 가능성이 있다. (향후 Spring TX 로 해결 예정)
+ * 가계부 서비스.
+ * 내역 저장/삭제 시 연동 자산(ACC/CSH) 잔액을 즉시 반영한다.
+ * asset_id = 0 이면 자산 연동 없이 기록만 저장한다.
  */
 public class LedgerService {
 
@@ -41,13 +34,7 @@ public class LedgerService {
 
     /**
      * 가계부 내역 저장 + 연동 자산 잔액 반영.
-     *
-     * [amount 부호 규칙]
-     *   프론트엔드는 금액을 항상 양수로 전송하고, direction("IN"/"OUT") 으로 방향을 구분한다.
-     *   Service 에서 부호를 적용해 DB 에 저장한다: 수입 → +, 지출 → -.
-     *   잔액 조정도 동일한 부호 금액으로 전달하면 수입은 잔액 증가, 지출은 잔액 감소가 된다.
-     *
-     * @param payload { asset_id, category_id, amount(양수), direction, transaction_date }
+     * direction "IN" → amount 양수 저장, "OUT" → 음수 저장.
      */
     public void processGeneralLedger(Map<String, Object> payload) throws Exception {
         String direction  = (String) payload.getOrDefault("direction", "OUT");
@@ -76,10 +63,7 @@ public class LedgerService {
 
     /**
      * 가계부 내역 삭제 + 연동 자산 잔액 복원.
-     *
-     * [복원 로직]
-     *   저장 시 지출(-10000)로 기록된 내역을 삭제하면 adjustAssetBalance(assetId, +10000) 으로 복원.
-     *   삭제 전에 기존 amount 를 반드시 조회해야 한다 (삭제 후에는 조회 불가).
+     * 삭제 전 기존 amount 를 조회해 부호 반전으로 잔액을 되돌린다.
      */
     public void deleteGeneralLedger(int ledgerId) throws Exception {
         GeneralLedgerDTO existing = ledgerRepository.findGeneralLedgerById(ledgerId);

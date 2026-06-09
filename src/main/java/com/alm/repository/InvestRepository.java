@@ -11,15 +11,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 투자 포트폴리오 + 매매 일지 DB 접근 계층.
- *
- * [stock_master 참조 없음]
- *   ticker_code / ticker_name 을 invest_portfolio / invest_log 에 직접 저장하므로
- *   stock_master JOIN 이 없다.
- *
- * [크로스 도메인 잔액 갱신]
- *   매수/매도 시 account_table.balance 를 이 Repository 에서 직접 UPDATE 한다.
- *   단순 프로젝트이므로 AssetRepository 를 거치지 않고 여기서 처리.
+ * 투자 포트폴리오 + 매매 일지 Repository.
+ * ticker_code / ticker_name 은 비정규화로 직접 저장한다 (stock_master 없음).
+ * 매수/매도 시 account_table.balance 도 여기서 직접 갱신한다.
  */
 public class InvestRepository {
 
@@ -42,7 +36,7 @@ public class InvestRepository {
         return list;
     }
 
-    /** (계좌 ID + 종목 코드) 복합키로 단건 조회. 같은 종목을 여러 계좌에서 보유할 수 있어 asset_id 필수. */
+    /** (asset_id + ticker_code) 복합키 조회. 동일 종목을 여러 계좌에서 보유 가능하므로 asset_id 필수. */
     public InvestPortfolioDTO findPortfolioByKey(int assetId, String tickerCode) {
         String sql = "SELECT invest_id, asset_id, ticker_code, ticker_name, "
                    + "       quantity, purchase_price "
@@ -59,10 +53,7 @@ public class InvestRepository {
         return null;
     }
 
-    /**
-     * ticker_code 단독 조회 (매도 시 계좌 자동 특정용).
-     * 같은 종목을 여러 계좌에 보유한 경우 가장 먼저 매수한 계좌 반환.
-     */
+    /** ticker_code 단독 조회. 동일 종목 여러 계좌 보유 시 첫 번째 계좌 반환. */
     public InvestPortfolioDTO findPortfolioByTicker(String tickerCode) {
         String sql = "SELECT invest_id, asset_id, ticker_code, ticker_name, "
                    + "       quantity, purchase_price "
@@ -82,11 +73,8 @@ public class InvestRepository {
     // ── 매수 ─────────────────────────────────────────────────────────
 
     /**
-     * 포트폴리오 Upsert (신규 INSERT or 기존 가중평균단가 재계산 후 UPDATE).
-     *
-     * [가중평균단가(WAC) 계산]
-     *   (기존수량 × 기존단가 + 신규수량 × 신규단가) ÷ (기존수량 + 신규수량)
-     *   원 단위 정수 나눗셈(소수점 버림) — 은행 관행과 동일.
+     * 포트폴리오 Upsert. 기존 보유 시 가중평균단가(WAC) 재계산.
+     * WAC = (기존수량 × 기존단가 + 신규수량 × 신규단가) / 전체수량
      */
     public void buyStock(int assetId, String tickerCode, String tickerName,
                          int qty, long price) {
@@ -129,12 +117,8 @@ public class InvestRepository {
     // ── 매도 ─────────────────────────────────────────────────────────
 
     /**
-     * 수량 차감. 잔량 0 이하면 포트폴리오 행 삭제(청산).
-     *
-     * [실현손익]
-     *   (매도단가 − 평균매입단가) × 매도수량. invest_log 에 기록.
-     *
-     * @return 실현손익 (양수 = 이익, 음수 = 손실). 보유 없으면 0L.
+     * 수량 차감. 잔량 0 이하면 행 삭제(전량 청산).
+     * @return 실현손익 = (매도단가 - 평균매입단가) × 수량. 보유 없으면 0L.
      */
     public long sellStock(int assetId, String tickerCode, int qty, long sellPrice) {
         InvestPortfolioDTO existing = findPortfolioByKey(assetId, tickerCode);
@@ -169,10 +153,8 @@ public class InvestRepository {
     // ── 계좌 잔액 갱신 ────────────────────────────────────────────────
 
     /**
-     * 매수/매도 후 예수금 갱신.
-     * SET balance = balance + delta : 원자적 연산으로 레이스 컨디션 방지.
-     *
-     * @param delta 매수 시 음수(차감), 매도 시 양수(증가)
+     * 예수금 갱신. SET balance = balance + delta (원자적 연산).
+     * @param delta 매수 시 음수, 매도 시 양수
      */
     public void updateAccountBalance(int assetId, long delta) {
         String sql = "UPDATE account_table SET balance = balance + ? WHERE asset_id = ?";
@@ -215,10 +197,7 @@ public class InvestRepository {
         return list;
     }
 
-    /**
-     * 매매 이력 등록. 매수(BUY) / 매도(SELL) 공용.
-     * reason 이 빈 문자열이면 NULL 저장 (의미 없는 빈 TEXT 방지).
-     */
+    /** 매매 이력 등록 (BUY/SELL 공용). reason 빈 문자열은 NULL 저장. */
     public void insertLog(int assetId, String tickerCode, String tickerName,
                           String type, int qty, long price,
                           long profit, String reason, String date) {
@@ -254,14 +233,8 @@ public class InvestRepository {
     // ── 증권 계좌 목록 (드롭다운용) ──────────────────────────────────
 
     /**
-     * 증권위탁계좌 + ISA 목록 반환 (매수 화면 계좌 선택용).
-     *
-     * [LEFT JOIN account_bank]
-     *   bank_id 가 NULL 인 계좌도 목록에 포함되어야 하므로 LEFT JOIN.
-     *   COALESCE(b.bank_name, '미지정') : bank_name 이 NULL 이면 '미지정' 으로 표시.
-     *
-     * [LinkedHashMap]
-     *   JSON 응답의 키 순서를 삽입 순서대로 유지하기 위해 사용.
+     * 증권위탁계좌 + ISA 목록 반환 (매수 화면 드롭다운용).
+     * bank_id NULL 계좌도 포함하기 위해 LEFT JOIN. bank_name NULL 은 '미지정' 표시.
      */
     public List<Map<String, Object>> findBrokerageAccounts() {
         String sql = "SELECT ac.asset_id, "
@@ -293,11 +266,7 @@ public class InvestRepository {
 
     // ── 총 포트폴리오 평가액 ──────────────────────────────────────────
 
-    /**
-     * 보유 주식 전체의 매입 평가액(quantity × purchase_price) 합계.
-     * 실시간 시세 아닌 평균매입단가 기준 → KIS API 호출 없음.
-     * AssetService.calculateTotalAsset() 에서 예수금과 합산해 총 투자 자산을 구한다.
-     */
+    /** 포트폴리오 전체 매입 평가액 합계 (quantity × purchase_price). KIS API 호출 없음. */
     public long getTotalPortfolioValue() {
         String sql = "SELECT COALESCE(SUM(quantity * purchase_price), 0) FROM invest_portfolio";
         try (Connection con = DBConnection.getConnection();

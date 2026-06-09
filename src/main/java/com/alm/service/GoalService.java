@@ -8,14 +8,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 재무 목표 비즈니스 로직.
- *
- * [핵심 계산 3가지]
- *   ① current_amount : asset_id 지정 시 해당 자산 현재가치, NULL 이면 전체 자산 합계.
- *   ② achievement_rate : current / target × 100, 100% 초과분은 100 으로 고정.
- *   ③ days_remaining : 오늘 ~ end_date 일수. 기한 없는 목표는 Long.MAX_VALUE (센티널).
- */
+/** 재무 목표 서비스. */
 public class GoalService {
 
     private final GoalRepository repo = new GoalRepository();
@@ -23,11 +16,9 @@ public class GoalService {
     // ── 조회 ─────────────────────────────────────────────────────────
 
     /**
-     * 전체 목표 + 진행 현황 반환.
-     *
-     * [달성률 연산 순서]
-     *   current * 100L / target : 먼저 100 을 곱해 정수 나눗셈 정밀도를 보존.
-     *   (current / target * 100 으로 쓰면 소수 버림 후 곱셈이 되어 항상 0 이 나올 수 있음.)
+     * 목표 목록 + 달성률 / D-day 계산 반환.
+     * 달성률: current * 100L / target (100 먼저 곱해 정수 나눗셈 정밀도 보존).
+     * 기한 없는 목표의 days_remaining 은 Long.MAX_VALUE 로 설정한다.
      */
     public List<GoalDTO> getGoalsWithProgress() {
         List<GoalDTO> list = repo.findAllGoals();
@@ -65,15 +56,8 @@ public class GoalService {
 
     /**
      * 목표 등록.
-     *
-     * [asset_id 처리]
-     *   0 또는 미전송 시 null 저장 → 전체 자산 기준 목표로 해석.
-     *   특정 자산 기준이면 해당 asset_id 저장.
-     *
-     * [end_date 처리]
-     *   빈 문자열이면 null 저장 → 기한 없는 목표.
-     *
-     * @param payload {goal_name, target_amount, end_date(선택), asset_id(선택)}
+     * asset_id 0 또는 미전송 시 null 저장 → 전체 자산 기준 목표.
+     * end_date 빈 문자열 시 null 저장 → 기한 없음.
      */
     public void saveGoal(Map<String, Object> payload) throws Exception {
         GoalDTO dto = new GoalDTO();

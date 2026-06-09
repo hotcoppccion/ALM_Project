@@ -1,28 +1,25 @@
 package com.alm.service;
 
+import com.alm.dto.AccountDTO;
 import com.alm.dto.AssetDTO;
 import com.alm.repository.AssetRepository;
 import com.alm.repository.InvestRepository;
 import com.alm.service.handler.*;
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 자산 도메인 비즈니스 로직.
- *
- * [SOLID 적용 포인트]
- *   OCP : 새 자산 타입 추가 시 HANDLERS Map 에 핸들러만 등록하면 된다. Service 메서드 수정 불필요.
- *   SRP : 저장/수정의 타입별 로직은 각 Handler 클래스가 담당. 이 클래스는 흐름 제어만 한다.
- *   DIP : 기본 생성자(운영)와 의존성 주입 생성자(테스트/교체) 를 분리해 구현체 교체를 허용한다.
- */
+/** 자산 도메인 서비스. */
 public class AssetService {
 
     private final AssetRepository        assetRepository;
     private final InvestRepository       investRepository;
     private final DeleteValidatorService deleteValidatorService;
+    private final AccountService         accountService;
+    private final LedgerService          ledgerService;
 
-    // 전략 패턴: 타입 코드 → 핸들러 매핑. 새 타입은 여기에 한 줄만 추가한다.
-    // Map.of() 로 불변 Map 생성 — 런타임 변경 방지.
+    // 타입 코드 → 핸들러 매핑. 새 자산 타입 추가 시 여기에만 등록하면 된다.
     private static final Map<String, AssetHandler> HANDLERS = Map.of(
         "ACC", new AccHandler(),
         "REA", new ReaHandler(),
@@ -30,20 +27,24 @@ public class AssetService {
         "CSH", new CshHandler()
     );
 
-    /** 운영 환경용 기본 생성자. */
+    /** 기본 생성자. */
     public AssetService() {
         this.assetRepository        = new AssetRepository();
         this.investRepository       = new InvestRepository();
         this.deleteValidatorService = new DeleteValidatorService();
+        this.accountService         = new AccountService();
+        this.ledgerService          = new LedgerService();
     }
 
-    /** 테스트·교체 환경용 의존성 주입 생성자 (DIP). */
+    /** 테스트용 의존성 주입 생성자. */
     public AssetService(AssetRepository assetRepository,
                         InvestRepository investRepository,
                         DeleteValidatorService deleteValidatorService) {
         this.assetRepository        = assetRepository;
         this.investRepository       = investRepository;
         this.deleteValidatorService = deleteValidatorService;
+        this.accountService         = new AccountService();
+        this.ledgerService          = new LedgerService();
     }
 
     // ── 조회 ─────────────────────────────────────────────────────────
@@ -57,22 +58,50 @@ public class AssetService {
     }
 
     /**
-     * 전체 자산 합계 계산.
-     *
-     * [OCP 개선]
-     *   이전: instanceof 체인으로 타입마다 다른 getter 를 직접 호출했다.
-     *   개선: dto.getAmount() 호출 — 각 DTO 가 자신의 금액을 반환.
-     *         새 타입이 생겨도 이 메서드는 수정하지 않아도 된다.
-     *
-     * [투자 평가액 별도 합산]
-     *   증권계좌 balance 는 예수금(현금)만 반영한다.
-     *   보유 주식의 평가액(매입단가 × 수량)은 별도로 더해야 전체 투자 자산이 포함된다.
+     * 전체 자산 합계.
+     * 증권계좌 balance 는 예수금만이므로 포트폴리오 매입 평가액을 별도로 합산한다.
      */
     public long calculateTotalAsset() {
         long total = 0;
         for (AssetDTO dto : assetRepository.findAllAssets()) total += dto.getAmount();
         total += investRepository.getTotalPortfolioValue();
         return total;
+    }
+
+    /**
+     * 예상 연간 이자 수익금 반환.
+     * ACC 타입 자산만 유효하며, 다른 타입이거나 자산이 없으면 0.0 반환.
+     */
+    public double getAccountInterest(long assetId) {
+        AssetDTO dto = assetRepository.findById(assetId, "ACC");
+        if (!(dto instanceof AccountDTO)) return 0.0;
+        return accountService.calculateInterest((AccountDTO) dto);
+    }
+
+    /**
+     * 이자 수동 지급.
+     * 연간 이자액을 계산 후 계좌 잔액에 반영하고 가계부에 수입으로 기록한다.
+     * 기준일은 호출 당일 (사용자가 연 1회 버튼으로 트리거).
+     *
+     * @throws Exception ACC 타입이 아닌 경우, 이자액이 0 이하인 경우
+     */
+    public void applyAccountInterest(long assetId) throws Exception {
+        AssetDTO dto = assetRepository.findById(assetId, "ACC");
+        if (!(dto instanceof AccountDTO))
+            throw new Exception("금융계좌(ACC) 타입만 이자 적용이 가능합니다.");
+
+        long interest = Math.round(accountService.calculateInterest((AccountDTO) dto));
+        if (interest <= 0)
+            throw new Exception("적용할 이자가 없습니다. 이자율 또는 잔액을 확인하세요.");
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("direction",        "IN");
+        payload.put("amount",           interest);
+        payload.put("asset_id",         assetId);
+        payload.put("category_id",      1);                              // 기본 수입 카테고리
+        payload.put("transaction_date", LocalDate.now().toString());
+
+        ledgerService.processGeneralLedger(payload);
     }
 
     public List<Map<String, Object>> getBanks()        { return assetRepository.findAllBanks(); }
@@ -97,15 +126,8 @@ public class AssetService {
     // ── 저장 ─────────────────────────────────────────────────────────
 
     /**
-     * 자산 추가.
-     *
-     * [처리 순서]
-     *   1. asset_master INSERT → AUTO_INCREMENT ID 발급 (Class Table Inheritance 상위 레코드)
-     *   2. typeCode 로 핸들러 조회 → 해당 자식 테이블 INSERT
-     *   3. 자식 저장 실패 시 마스터 롤백 (고아 레코드 방지)
-     *
-     * [트랜잭션 부재]
-     *   순수 JDBC 환경으로 @Transactional 미사용. 2단계 실패 시 명시적 롤백.
+     * 자산 등록. asset_master INSERT 후 타입별 자식 테이블 INSERT.
+     * 자식 저장 실패 시 마스터 행을 삭제하여 고아 레코드를 방지한다.
      */
     public void saveAssetDetails(String typeCode, Map<String, Object> payload) throws Exception {
         long assetId = assetRepository.insertAssetMaster(typeCode);
@@ -135,10 +157,7 @@ public class AssetService {
 
     // ── 삭제 ─────────────────────────────────────────────────────────
 
-    /**
-     * 자산 삭제.
-     * "삭제" 문자열 이중 확인 → 참조 무결성 검증 → DB 삭제 순으로 처리.
-     */
+    /** "삭제" 문자열 확인 → 타 도메인 참조 검증 → DB 삭제. */
     public void requestDeleteAsset(long assetId, String confirmString) throws Exception {
         if (!deleteValidatorService.verifyConfirmString(confirmString))
             throw new Exception("문구가 일치하지 않습니다.");

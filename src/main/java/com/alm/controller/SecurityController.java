@@ -8,14 +8,8 @@ import java.util.Map;
 
 /**
  * 보안(인증) 도메인 컨트롤러.
- *
- * [@Controller 사용 이유]
- *   index() 가 HTML 파일로 리다이렉트를 반환해야 하므로 @RestController 대신 @Controller 사용.
- *   JSON 응답이 필요한 메서드에는 @ResponseBody 를 개별 추가.
- *
- * [루트 경로 처리 흐름]
- *   최초 접속(password_hash 없음) → /setup-password.html
- *   재접속                         → /login.html
+ * index() 가 HTML 리다이렉트를 반환하므로 @RestController 대신 @Controller 사용.
+ * 최초 접속(password_hash 없음) → /setup-password.html, 이후 → /login.html.
  */
 @Controller
 public class SecurityController {

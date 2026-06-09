@@ -12,26 +12,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 투자 포트폴리오 비즈니스 로직.
- *
- * [DIP 적용]
- *   stockProvider 필드를 StockInfoProvider 인터페이스 타입으로 선언해
- *   KIS API 구현체에 직접 의존하지 않는다.
- *   기본 생성자는 KisApiAdapter 를 주입하고, 테스트 시엔 Mock 구현체를 주입할 수 있다.
- */
+/** 투자 포트폴리오 서비스. */
 public class InvestService {
 
     private final InvestRepository  investRepo;
     private final StockInfoProvider stockProvider;
 
-    /** 운영 환경용 기본 생성자. */
+    /** 기본 생성자. */
     public InvestService() {
         this.investRepo    = new InvestRepository();
         this.stockProvider = new KisApiAdapter();
     }
 
-    /** 테스트·교체 환경용 의존성 주입 생성자 (DIP). */
+    /** 테스트용 의존성 주입 생성자. */
     public InvestService(InvestRepository investRepo, StockInfoProvider stockProvider) {
         this.investRepo    = investRepo;
         this.stockProvider = stockProvider;
@@ -40,11 +33,8 @@ public class InvestService {
     // ── 포트폴리오 조회 ───────────────────────────────────────────────
 
     /**
-     * 전체 보유 종목 + KIS 현재가 조회.
-     *
-     * [API 오류 격리]
-     *   종목별 try-catch 로 한 종목의 API 실패가 전체 조회를 중단시키지 않도록 한다.
-     *   실패한 종목은 api_error=true 로 표시해 프론트엔드에서 "조회 실패" UI 로 처리한다.
+     * 보유 종목 목록 + KIS 현재가 조회.
+     * 종목별 API 실패는 api_error=true 로 표시하고 나머지 종목 조회를 계속한다.
      */
     public List<InvestPortfolioDTO> getPortfolioWithPrices() {
         List<InvestPortfolioDTO> list = investRepo.findAllPortfolio();
@@ -97,12 +87,8 @@ public class InvestService {
     // ── 매수 ─────────────────────────────────────────────────────────
 
     /**
-     * 매수 처리.
-     *
-     * [처리 순서]
-     *   1. 유효성 검증
-     *   2. 종목명 미입력 시 KIS API 에서 조회 (불필요한 API 호출 최소화)
-     *   3. 포트폴리오 UPSERT → 매매 이력 INSERT → 계좌 잔액 차감
+     * 매수 처리. 포트폴리오 UPSERT → 매매 이력 INSERT → 계좌 잔액 차감.
+     * 종목명 미입력 시 KIS API 에서 자동 조회한다.
      */
     public void buyStock(Map<String, Object> payload) throws Exception {
         int    assetId    = ParseUtil.parseInt(payload.get("asset_id"), 0);
@@ -118,13 +104,7 @@ public class InvestService {
         if (qty  <= 0)            throw new Exception("수량을 올바르게 입력하세요.");
         if (price <= 0)           throw new Exception("매수가를 올바르게 입력하세요.");
 
-        if (tickerName.isEmpty()) {
-            try {
-                tickerName = (String) lookupStock(tickerCode).get("ticker_name");
-            } catch (Exception e) {
-                tickerName = tickerCode; // API 실패 시 코드로 대체
-            }
-        }
+        if (tickerName.isEmpty()) tickerName = tickerCode;
 
         investRepo.buyStock(assetId, tickerCode, tickerName, qty, price);
         investRepo.insertLog(assetId, tickerCode, tickerName, "BUY", qty, price, 0L, reason, date);
@@ -134,11 +114,8 @@ public class InvestService {
     // ── 매도 ─────────────────────────────────────────────────────────
 
     /**
-     * 매도 처리.
-     *
-     * [계좌 자동 특정]
-     *   매도 화면에서 계좌를 별도 선택할 필요 없다.
-     *   매수 시 포트폴리오에 asset_id 가 기록되어 있으므로 ticker_code 로 자동 조회한다.
+     * 매도 처리. ticker_code 로 포트폴리오에서 계좌를 자동 조회한다.
+     * 잔량 차감 → 매매 이력 INSERT → 계좌 잔액 증가.
      */
     public void sellStock(Map<String, Object> payload) throws Exception {
         String tickerCode = getString(payload, "ticker_code");
@@ -167,21 +144,7 @@ public class InvestService {
     public List<InvestLogDTO> getLogs()  { return investRepo.findAllLogs(); }
     public void deleteLog(int logId)     { investRepo.deleteLog(logId); }
 
-    // ── 종목 실시간 조회 ──────────────────────────────────────────────
-
-    public Map<String, Object> lookupStock(String tickerCode) throws Exception {
-        if (tickerCode == null || tickerCode.isBlank()) throw new Exception("종목 코드를 입력하세요.");
-        String[] info = stockProvider.getStockInfo(tickerCode);
-        if (info[2].isEmpty()) throw new Exception("종목을 찾을 수 없습니다.");
-        Map<String, Object> result = new HashMap<>();
-        result.put("ticker_code",   tickerCode);
-        result.put("ticker_name",   info[2]);
-        result.put("current_price", info[0].isEmpty() ? 0L : Long.parseLong(info[0]));
-        result.put("change_rate",   info[1]);
-        return result;
-    }
-
-    // ── 파싱 헬퍼 (Map 전용 getString 만 유지, 숫자 파싱은 ParseUtil 위임) ──
+    // ── 파싱 헬퍼 ────────────────────────────────────────────────────
 
     private String getString(Map<String, Object> m, String k) {
         Object v = m.get(k); return v == null ? "" : v.toString().trim();

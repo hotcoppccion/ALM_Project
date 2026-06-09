@@ -11,14 +11,13 @@ import java.util.Map;
  * 투자 포트폴리오 REST API.
  *
  * [API 목록]
- *   GET    /api/invest/portfolio       보유 종목 + KIS 현재가
- *   GET    /api/invest/summary         포트폴리오 요약 (대시보드용)
- *   GET    /api/invest/brokerages      증권위탁계좌 드롭다운
- *   POST   /api/invest/buy             매수 등록
- *   POST   /api/invest/sell            매도 등록
- *   GET    /api/invest/logs            매매 일지 전체 조회
- *   DELETE /api/invest/logs/{id}       매매 이력 삭제
- *   GET    /api/invest/stocks/lookup   KIS API 종목 실시간 조회
+ *   GET    /api/invest/portfolio   보유 종목 + KIS 현재가
+ *   GET    /api/invest/summary     포트폴리오 요약 (대시보드용)
+ *   GET    /api/invest/brokerages  증권위탁계좌 드롭다운
+ *   POST   /api/invest/buy         매수 등록
+ *   POST   /api/invest/sell        매도 등록
+ *   GET    /api/invest/logs        매매 일지 전체 조회
+ *   DELETE /api/invest/logs/{id}   매매 이력 삭제
  */
 @RestController
 @RequestMapping("/api/invest")
@@ -95,12 +94,4 @@ public class InvestController {
         }
     }
 
-    @GetMapping("/stocks/lookup")
-    public ResponseEntity<?> lookupStock(@RequestParam String code) {
-        try {
-            return ResponseEntity.ok(investService.lookupStock(code));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
-    }
 }

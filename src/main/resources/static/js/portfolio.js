@@ -156,32 +156,6 @@ function fillSellSelect(list) {
 }
 
 // ══════════════════════════════════════════════════════════
-//  종목 코드 입력 시 KIS API로 종목명 자동완성
-// ══════════════════════════════════════════════════════════
-let lookupTimer = null;
-
-function lookupCode(prefix) {
-    clearTimeout(lookupTimer);
-    const code = document.getElementById(`${prefix}-code`).value.trim().toUpperCase();
-    document.getElementById(`${prefix}-code`).value = code;
-
-    const isCode6    = /^\d{6}$/.test(code);
-    const isOverseas = /^[A-Za-z]{1,10}$/.test(code);
-    if (!isCode6 && !isOverseas) return;
-
-    lookupTimer = setTimeout(async () => {
-        try {
-            const res  = await fetch(`/api/invest/stocks/lookup?code=${encodeURIComponent(code)}`);
-            const data = await res.json();
-            if (res.ok && data.ticker_name) {
-                const nameEl = document.getElementById(`${prefix}-name`);
-                if (!nameEl.value.trim()) nameEl.value = data.ticker_name;
-            }
-        } catch (e) { /* 조회 실패 시 무시 — 수동 입력 가능 */ }
-    }, 500);
-}
-
-// ══════════════════════════════════════════════════════════
 //  모달
 // ══════════════════════════════════════════════════════════
 
@@ -239,7 +213,7 @@ async function submitBuy() {
     const reason  = document.getElementById('buy-reason').value.trim();
 
     if (!assetId) { alert('증권 계좌를 선택하세요.'); return; }
-    if (!code)    { alert('종목을 검색하여 선택하세요.'); return; }
+    if (!code)    { alert('종목 코드를 입력하세요.'); return; }
     if (!qty   || Number(qty)   <= 0) { alert('수량을 입력하세요.'); return; }
     if (!price || Number(price) <= 0) { alert('매수가를 입력하세요.'); return; }
     if (!date) { alert('거래일을 입력하세요.'); return; }

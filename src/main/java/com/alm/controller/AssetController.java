@@ -14,6 +14,8 @@ import java.util.Map;
  *   GET    /api/asset/list              전체 자산 목록 (4개 타입 합산)
  *   GET    /api/asset/total             전체 자산 합계 금액
  *   GET    /api/asset/{assetId}         단건 조회 (수정 모달 pre-fill)
+ *   GET    /api/asset/{assetId}/interest   예상 연간 이자 수익금 조회
+ *   POST   /api/asset/{assetId}/interest   이자 지급 (잔액 반영 + 가계부 수입 기록)
  *   GET    /api/asset/banks             은행 드롭다운
  *   GET    /api/asset/account-types     계좌 종류 드롭다운
  *   POST   /api/asset/banks             은행 추가
@@ -51,6 +53,22 @@ public class AssetController {
         AssetDTO dto = assetService.getAssetById(assetId, typeCode);
         if (dto == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/{assetId}/interest")
+    public ResponseEntity<?> getAccountInterest(@PathVariable long assetId) {
+        double interest = assetService.getAccountInterest(assetId);
+        return ResponseEntity.ok(Map.of("asset_id", assetId, "annual_interest", interest));
+    }
+
+    @PostMapping("/{assetId}/interest")
+    public ResponseEntity<?> applyAccountInterest(@PathVariable long assetId) {
+        try {
+            assetService.applyAccountInterest(assetId);
+            return ResponseEntity.ok(Map.of("message", "이자가 지급되었습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     @GetMapping("/banks")

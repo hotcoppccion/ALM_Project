@@ -7,11 +7,8 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 /**
- * 보안 비즈니스 로직.
- *
- * [인증 흐름]
- *   입력 비밀번호 → SHA-256 해시 → DB 저장 해시와 비교 → 성공 시 last_login_date 갱신.
- *   평문 비밀번호는 DB 에 저장하지 않는다.
+ * 보안 서비스.
+ * 입력 비밀번호를 SHA-256 해시 후 DB 저장 값과 비교한다. 평문은 저장하지 않는다.
  */
 public class SecurityService {
 

@@ -8,15 +8,8 @@ import java.util.Map;
 
 /**
  * KIS API 시장 지수 캐싱 스케줄러.
- *
- * [설계 의도]
- *   화면 로드 시마다 KIS API 를 직접 호출하면 TR_ID 당 초당 1건 제한에 걸린다.
- *   서버가 1초마다 한 번만 KIS 를 호출하고 결과를 메모리에 캐싱해
- *   사용자 수와 무관하게 서버 메모리에서 즉시 응답한다.
- *
- * [volatile]
- *   스케줄러 스레드(쓰기)와 HTTP 요청 스레드(읽기)가 동시에 접근하므로
- *   CPU 캐시 불일치 방지를 위해 volatile 선언.
+ * KIS API 초당 1건 제한 대응: 1초마다 서버에서 한 번만 호출하고 메모리에 캐싱.
+ * cached 필드는 스케줄러 스레드(쓰기)와 요청 스레드(읽기)가 동시 접근하므로 volatile 선언.
  */
 @Component
 public class MarketDataScheduler {

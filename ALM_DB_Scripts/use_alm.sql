@@ -1,1 +1,1 @@
-use alm_db
+USE alm_db;

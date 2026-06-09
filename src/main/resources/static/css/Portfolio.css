@@ -281,3 +281,7 @@ body {
 .search-item .s-code { color: #63b3ed; font-size: 11px; min-width: 60px; }
 .search-item .s-name { color: #e2e8f0; }
 .search-item .s-mkt  { font-size: 10px; color: #718096; margin-left: auto; }
+
+/* ── 미국주식 USD 표시 ── */
+.usd-badge { font-size: 10px; background: #2b6cb0; color: #bee3f8; padding: 1px 5px; border-radius: 3px; font-weight: 600; vertical-align: middle; margin-left: 4px; }
+.usd-notice { margin-left: auto; font-size: 12px; color: #a0aec0; align-self: center; }

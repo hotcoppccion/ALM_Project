@@ -10,24 +10,9 @@ import java.net.http.HttpResponse;
 import java.time.Instant;
 
 /**
- * 한국투자증권(KIS) OpenAPI 클라이언트 (Facade Pattern).
- *
- * [역할]
- *   KIS API 와 통신하는 유일한 창구.
- *   토큰 자동 발급 + 재사용 (만료 5분 전 갱신), 국내/해외 현재가 및 지수 조회.
- *
- * [국내/해외 자동 감지]
- *   tickerCode.matches("\\d{6}") → 국내(KOSPI/KOSDAQ).
- *   그 외 영문 티커 → 해외(NASDAQ 기본값, 추후 거래소 선택 확장 가능).
- *
- * [stock_master 제거 이후 설계]
- *   전 종목 일괄 동기화(fetchAllStocksFromKRX) 불필요.
- *   종목명은 매수 시점에 API 에서 직접 조회해 invest_portfolio 에 저장한다.
- *
- * [해외 주식 환율]
- *   KIS API 는 해외 가격을 달러로 반환. 현재는 원화 환산 없이 달러 그대로 사용.
- *   향후 환율 API 추가로 원화 변환 확장 가능.
- *
+ * KIS OpenAPI 클라이언트. 토큰 발급·캐싱, 국내/해외 현재가, 코스피 지수 조회를 제공한다.
+ * 6자리 숫자 티커 → 국내(KOSPI/KOSDAQ), 그 외 → 해외(NASDAQ 기본값).
+ * 해외 가격은 달러 단위로 반환되며 원화 환산은 미구현.
  */
 public class APIClient {
 
@@ -49,10 +34,7 @@ public class APIClient {
 
     // ── 토큰 발급 ─────────────────────────────────────────────────────
 
-    /**
-     * 액세스 토큰 반환. 캐시 유효 시 재사용, 만료 시 재발급.
-     * synchronized: 멀티스레드 환경에서 중복 발급 방지.
-     */
+    /** 토큰 반환. 캐시 유효 시 재사용, 만료 5분 전 자동 재발급. synchronized 로 중복 발급 방지. */
     private static synchronized String getToken() throws Exception {
         if (accessToken != null && tokenExpiry != null
                 && Instant.now().isBefore(tokenExpiry)) {
